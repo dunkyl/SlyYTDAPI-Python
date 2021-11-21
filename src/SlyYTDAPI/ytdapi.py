@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from dataclasses import dataclass
 from typing import AsyncGenerator, Generic, TypeVar, Any
-from SlyAPI import EnumParam, WebAPI, AsyncTrans
+from SlyAPI import EnumParam, WebAPI, AsyncTrans, OAuth2User
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -207,10 +207,15 @@ class Channel(APIObj['YouTubeData']):
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    def __init__(self, scope: Scope):
+    def __init__(self, auth: str|OAuth2User, scope: Scope=Scope.READONLY):
         # if scope != Scope.YouTubeReadOnly:
         #     raise ValueError("For access to YouTube members, use the YouTubeData_WithMembers subclass.")
-        pass
+        match auth:
+            case str():
+                auth_ = {'key': auth}
+            case _:
+                auth_ = auth
+        super().__init__(auth=auth_)
 
     async def my_channel(self, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(mine=True, parts=parts, limit=1))[0]
