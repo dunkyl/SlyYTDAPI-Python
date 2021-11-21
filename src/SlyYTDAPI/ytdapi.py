@@ -42,6 +42,9 @@ class CommentOrder(EnumParam):
 
 ISO8601_PERIOD = re.compile(r'P(\d+)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
 
+def yt_date(date: str) -> datetime:
+    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
+
 W = TypeVar('W')
 T = TypeVar('T')
 GenOrAsync = AsyncGenerator[T, list[T]]
@@ -116,7 +119,7 @@ class Video(APIObj['YouTubeData']):
         if snippet := source.get('snippet'):
             self.title = snippet['title']
             self.description = snippet['description']
-            self.published_at = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            self.published_at = yt_date(snippet['publishedAt'])
             self.channel_id = snippet['channelId']
             self.channel_title = snippet['channelTitle']
             self.tags = snippet['tags']
@@ -179,7 +182,7 @@ class Channel(APIObj['YouTubeData']):
         if snippet := source.get('snippet'):
             self.title = snippet['title']
             self.description = snippet['description']
-            self.created_at = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            self.created_at = yt_date(snippet['publishedAt'])
             self.profile_image_url = snippet.get('thumbnails', {}).get('default', {}).get('url')
             self.custom_url = snippet.get('customUrl')
 
