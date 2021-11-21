@@ -82,7 +82,10 @@ class YouTubeData_WithMembers(YouTubeData):
             self._poll_next_page_token = (await self.get_json('/members'))['nextPageToken']
             return []
         else:
-            params = {'pageToken': self._poll_next_page_token}
+            params = {
+                **(Part.SNIPPET+MembersMode.UPDATES).to_dict(),
+                'pageToken': self._poll_next_page_token
+            }
             response = await self.get_json('/members', params)
             self._poll_next_page_token = response['nextPageToken']
             return [Membership(r) for r in response['items']]
