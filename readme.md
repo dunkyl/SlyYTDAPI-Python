@@ -1,14 +1,14 @@
 # SlyYTDAPI: YouTube Data API
 
----
+> 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
-> **This library is a work in progress!**
+> 🐍 For Python 3.10+
 
 No-boilerplate, async YouTube Data API access. 😋
 
-<!-- ```py
+```py
 pip install slyytdapi
-``` -->
+```
 
 This library does not have full coverage.
 All methods are read-only.
