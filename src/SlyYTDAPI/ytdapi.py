@@ -43,7 +43,7 @@ class CommentOrder(EnumParam):
 ISO8601_PERIOD = re.compile(r'P(\d+)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
 
 def yt_date(date: str) -> datetime:
-    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
 
 W = TypeVar('W')
 T = TypeVar('T')
@@ -75,16 +75,17 @@ class Comment:
 
     def __init__(self, source: dict[str, Any]):
         # case of top-level comment
-        if replies := source.get('replies'):
-            self.replies = [Comment(r) for r in replies['comments']]
-            source = source['snippet']['topLevelComment']
-        
+        if tlc := source.get('snippet', {}).get('topLevelComment'):
+            replies: list[Any] = source.get('replies', {}).get('comments', [])
+            self.replies = [Comment(r) for r in replies]
+            source = tlc
+            
         self.id = source['id']
         if snippet := source.get('snippet'):
             self.author_name = snippet['authorDisplayName']
             self.author_channel_id = snippet['authorChannelId']['value']
             self.body = snippet['textDisplay']
-            self.created_at = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            self.created_at = yt_date(snippet['publishedAt'])
         
 
 
@@ -114,6 +115,7 @@ class Video(APIObj['YouTubeData']):
     comment_count: int
 
     def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
+        print(source)
         super().__init__(service)
         self.id = source['id']
         if snippet := source.get('snippet'):
