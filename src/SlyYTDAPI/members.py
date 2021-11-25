@@ -29,7 +29,7 @@ class MemberLevel:
 class Membership:
     # part: snippet
     channel_id: str
-    channel_name: str
+    channel_title: str
     profile_image_url: str
     level: MemberLevel
     since: datetime
@@ -41,7 +41,7 @@ class Membership:
 
         snippet = source['snippet']
         self.channel_id = snippet['memberDetails']['channelId']
-        self.channel_name = snippet['memberDetails']['displayName']
+        self.channel_title = snippet['memberDetails']['displayName']
         self.profile_image_url = snippet['memberDetails']['profileImageUrl']
         self.level= MemberLevel(snippet['membershipsDetails'])
         self.since = yt_date(snippet['membershipsDuration']['memberSince'])

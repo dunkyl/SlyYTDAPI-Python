@@ -274,15 +274,15 @@ class YouTubeData(WebAPI):
             ).map(lambda r: Video(r, self))
 
     def search_videos(self,
-        channel_id: str|None=None,
         query: str|None=None,
+        channel_id: str|None=None,
         after: datetime|None=None,
         before: datetime|None=None,
         mine: bool|None=None,
         order: Order=Order.RELEVANCE,
         safeSearch: SafeSearch=SafeSearch.MODERATE,
         parts: Part=Part.SNIPPET,
-        limit: int|None=None) -> AsyncTrans[Video]:
+        limit: int|None=50) -> AsyncTrans[Video]:
         params = {
             **(parts+safeSearch+order).to_dict(),
             'type': 'video',

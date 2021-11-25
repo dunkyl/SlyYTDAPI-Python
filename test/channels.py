@@ -4,9 +4,8 @@ from SlyYTDAPI import *
 async def main():
     yt = YouTubeData_WithMembers(open('api_key.txt').read())
 
-    members = await yt.get_my_members()
+    channel = await yt.channel('UCy0tKL1T7wFoYcxCe0xjN6Q')
 
-    for member in members:
-        print(member.channel_title)
+    print(channel.description)
 
 asyncio.run(main())
