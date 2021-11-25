@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from SlyAPI.oauth2 import OAuth2User
 from SlyAPI.webapi import AsyncTrans, EnumParam
-from ytdapi import YouTubeData, Scope, Part, yt_date
+from .ytdapi import YouTubeData, Scope, Part, yt_date
 
 class MembersMode(EnumParam):
     ALL_CURRENT = 'all_current'
