@@ -7,6 +7,6 @@ async def main():
     members = await yt.get_my_members()
 
     for member in members:
-        print(member.channel_title)
+        print(member.channel_name)
 
 asyncio.run(main())

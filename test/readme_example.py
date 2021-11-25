@@ -13,7 +13,7 @@ async def main():
 
     # or opt in to generators
     print('\n---\n'.join([
-        F"{c.author_channel_id} > {c.body}"
+        F"{c.author_name} > {c.body}"
         async for c in my_video.comments(limit=10)
     ]))
 

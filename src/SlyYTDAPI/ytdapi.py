@@ -96,7 +96,7 @@ class Video(APIObj['YouTubeData']):
     description: str
     published_at: datetime
     channel_id: str
-    channel_title: str
+    channel_name: str
     tags: list[str]
     is_livestream: bool
 
@@ -121,7 +121,7 @@ class Video(APIObj['YouTubeData']):
             self.description = snippet['description']
             self.published_at = yt_date(snippet['publishedAt'])
             self.channel_id = snippet['channelId']
-            self.channel_title = snippet['channelTitle']
+            self.channel_name = snippet['channelTitle']
             self.tags = snippet.get('tags', [])
             self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
         if contentDetails := source.get('contentDetails'):
@@ -161,7 +161,7 @@ class Channel(APIObj['YouTubeData']):
     id: str
 
     # part: snippet
-    title: str
+    name: str
     description: str
     created_at: datetime
     profile_image_url: str|None = None
@@ -180,7 +180,7 @@ class Channel(APIObj['YouTubeData']):
 
         self.id = source['id']
         if snippet := source.get('snippet'):
-            self.title = snippet['title']
+            self.name = snippet['title']
             self.description = snippet['description']
             self.created_at = yt_date(snippet['publishedAt'])
             self.profile_image_url = snippet.get('thumbnails', {}).get('default', {}).get('url')
@@ -238,7 +238,7 @@ class YouTubeData(WebAPI):
             raise ValueError("Must specify exactly one of channel id or mine in channel list query")
         params = {
             **parts.to_dict(),
-            'mine': mine,
+            'mine': mine if mine else None,
             'id': ','.join(channel_ids) if channel_ids else None,
             'maxResults': min(50, limit) if limit else None,
         }

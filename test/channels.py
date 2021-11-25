@@ -6,6 +6,6 @@ async def main():
 
     channel = await yt.channel('UCy0tKL1T7wFoYcxCe0xjN6Q')
 
-    print(channel.description)
+    print(channel.name)
 
 asyncio.run(main())
