@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from dataclasses import dataclass
-from typing import AsyncGenerator, Generic, TypeVar, Any
+from typing import Generic, TypeVar, Any
 from SlyAPI import EnumParam, WebAPI, AsyncTrans, OAuth2User
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
@@ -47,7 +47,6 @@ def yt_date(date: str) -> datetime:
 
 W = TypeVar('W')
 T = TypeVar('T')
-GenOrAsync = AsyncGenerator[T, list[T]]
 
 def get_dict_path(d: dict[str, Any], *keys: str) -> Any:
     for key in keys:

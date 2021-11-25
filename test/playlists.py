@@ -10,7 +10,5 @@ async def main():
 
     for video in seattle_mariners_soundtrack:
         print(video.title)
-
-    
-    
+ 
 asyncio.run(main())

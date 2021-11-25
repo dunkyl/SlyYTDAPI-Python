@@ -9,7 +9,7 @@ async def main():
     print(F"Check this out!\n{my_video.link()}")
 
     # KISS
-    _recent_comments = await my_video.comments(limit=10)
+    _ = await my_video.comments(limit=10) # list[Comment]
 
     # or opt in to generators
     print('\n---\n'.join([
