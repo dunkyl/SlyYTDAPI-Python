@@ -115,7 +115,6 @@ class Video(APIObj['YouTubeData']):
     comment_count: int
 
     def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
-        print(source)
         super().__init__(service)
         self.id = source['id']
         if snippet := source.get('snippet'):
@@ -124,8 +123,8 @@ class Video(APIObj['YouTubeData']):
             self.published_at = yt_date(snippet['publishedAt'])
             self.channel_id = snippet['channelId']
             self.channel_title = snippet['channelTitle']
-            self.tags = snippet['tags']
-            self.is_livestream = snippet['liveBroadcastContent'] != 'none'
+            self.tags = snippet.get('tags', [])
+            self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
         if contentDetails := source.get('contentDetails'):
             m = ISO8601_PERIOD.match(contentDetails['duration'])
             if m:
@@ -262,13 +261,13 @@ class YouTubeData(WebAPI):
     async def video(self, id: str, parts: Part=Part.ID+Part.SNIPPET) -> Video:
         return (await self.videos([id], parts))[0]
 
-    async def get_playlist_videos(self,
-        playlist_ids: list[str], 
+    def get_playlist_videos(self,
+        playlist_id: str, 
         parts: Part=Part.SNIPPET,
         limit: int|None=None) -> AsyncTrans[Video]:
         params = {
             **parts.to_dict(),
-            'id': ','.join(playlist_ids),
+            'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
         }
         return self.paginated(
