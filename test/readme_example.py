@@ -8,7 +8,7 @@ async def main():
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")
 
-    # KISS
+    # keep it simple
     _ = await my_video.comments(limit=10) # list[Comment]
 
     # or opt in to generators

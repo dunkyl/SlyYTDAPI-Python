@@ -4,7 +4,7 @@
 
 > 🐍 For Python 3.10+
 
-No-boilerplate, async YouTube Data API access. 😋
+No-boilerplate, async and typed YouTube Data API access. 😋
 
 ```py
 pip install slyytdapi
@@ -35,8 +35,8 @@ async def main():
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")
 
-    # KISS
-    recent_comments = await my_video.comments(limit=10)
+    # keep it simple
+    _ = await my_video.comments(limit=10) # list[Comment]
 
     # or opt in to generators
     print('\n---\n'.join([
