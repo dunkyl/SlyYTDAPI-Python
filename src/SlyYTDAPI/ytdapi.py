@@ -243,7 +243,7 @@ class YouTubeData(WebAPI):
             'maxResults': min(50, limit) if limit else None,
         }
         return self.paginated(
-            self.get_json, '/channels', params, limit
+            '/channels', params, limit
             ).map(lambda r: Channel(r, self))
 
     def videos(self,
@@ -254,7 +254,7 @@ class YouTubeData(WebAPI):
             'id': ','.join(video_ids),
         }
         return self.paginated(
-            self.get_json, '/videos', params, None
+            '/videos', params, None
             ).map(lambda r: Video(r, self))
 
     async def video(self, id: str, parts: Part=Part.ID+Part.SNIPPET) -> Video:
@@ -270,7 +270,7 @@ class YouTubeData(WebAPI):
             'maxResults': min(50, limit) if limit else None,
         }
         return self.paginated(
-            self.get_json, '/playlistItems', params, limit
+            '/playlistItems', params, limit
             ).map(lambda r: Video(r, self))
 
     def search_videos(self,
@@ -295,7 +295,7 @@ class YouTubeData(WebAPI):
         }
 
         return self.paginated(
-            self.get_json, '/search', params, limit
+            '/search', params, limit
             ).map(lambda r: Video(r, self))
 
     def comments(self,
@@ -311,6 +311,6 @@ class YouTubeData(WebAPI):
             'maxResults': min(100, limit) if limit else None,
         }
         return self.paginated(
-            self.get_json, '/commentThreads', params, limit
+            '/commentThreads', params, limit
             ) .map(Comment)
     
