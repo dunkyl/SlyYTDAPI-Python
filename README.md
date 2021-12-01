@@ -6,7 +6,7 @@
 
 No-boilerplate, async and typed YouTube Data API access. 😋
 
-```py
+```shell
 pip install slyytdapi
 ```
 
@@ -24,13 +24,13 @@ Currently, the following topics are supported:
 
 Example usage:
 
-```py
+```python
 import asyncio
 from SlyYTDAPI import *
 
 async def main():
     # don't forget to keep your secrets secret!
-    yt = YouTubeData(open('api_key.txt').read())
+    yt = await YouTubeData(open('api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")

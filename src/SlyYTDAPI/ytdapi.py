@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Any
-from SlyAPI import EnumParam, WebAPI, AsyncTrans, OAuth2User
+from SlyAPI import EnumParam, WebAPI, AsyncTrans, OAuth2User, APIKey
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -17,7 +17,7 @@ class Part(EnumParam):
     STATUS       = 'status'         # quota cost: 2
     STATISTICS   = 'statistics'     # quota cost: 2
     REPLIES      = 'replies'        # quota cost: 2
-    #...
+    # ...
 
 class PrivacyStatus(EnumParam):
     PRIVATE      = 'private'
@@ -110,10 +110,10 @@ class Video(APIObj['YouTubeData']):
     view_count: int
     like_count: int
 
-    #dislike_count: int ## rest in peace
+    # dislike_count: int ## rest in peace
     comment_count: int
 
-    def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
+    async def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
         super().__init__(service)
         self.id = source['id']
         if snippet := source.get('snippet'):
@@ -135,13 +135,13 @@ class Video(APIObj['YouTubeData']):
             self.privacy = status['privacyStatus']
 
 
-    def link(self, short: bool=False) -> str:
+    def link(self, short: bool = False) -> str:
         if not short:
             return F"https://www.youtube.com/watch?v={self.id}"
         else:
             return F"https://youtu.be/{self.id}"
 
-    def comments(self, limit: int|None=100) -> AsyncTrans[Comment]:
+    def comments(self, limit: int | None = 100) -> AsyncTrans[Comment]:
         return self._service.comments(self.id, limit=limit)
 
     async def channel(self) -> 'Channel':
@@ -210,15 +210,15 @@ class Channel(APIObj['YouTubeData']):
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    def __init__(self, auth: str|OAuth2User, scope: Scope=Scope.READONLY):
+    async def _async_init(self, auth: str|OAuth2User, scope: Scope=Scope.READONLY):
         # if scope != Scope.YouTubeReadOnly:
         #     raise ValueError("For access to YouTube members, use the YouTubeData_WithMembers subclass.")
         match auth:
             case str():
-                auth_ = {'key': auth}
+                auth_ = APIKey('key', auth)
             case _:
                 auth_ = auth
-        super().__init__(auth=auth_)
+        await super()._async_init(auth=auth_)
 
     async def my_channel(self, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(mine=True, parts=parts, limit=1))[0]

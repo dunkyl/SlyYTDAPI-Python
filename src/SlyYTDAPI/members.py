@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 from SlyAPI.oauth2 import OAuth2User
-from SlyAPI.webapi import AsyncTrans, EnumParam
+from SlyAPI import AsyncTrans, EnumParam
 from .ytdapi import YouTubeData, Scope, Part, yt_date
 
 class MembersMode(EnumParam):
@@ -53,10 +53,10 @@ class YouTubeData_WithMembers(YouTubeData):
 
     _poll_next_page_token: str|None = None
     
-    def __init__(self, auth: str|OAuth2User, scope: Scope=Scope.MEMBERS):
+    async def _async_init(self, auth: str|OAuth2User, scope: Scope=Scope.MEMBERS):
         if not Scope.MEMBERS in Scope: # todo: implement 'in' for EnumParam
             raise ValueError("Access you youtube members requires the members scope.")
-        super().__init__(auth, scope)
+        await super()._async_init(auth, scope)
         
 
     def get_my_members(self,

@@ -3,7 +3,7 @@ from SlyYTDAPI import *
 
 async def main():
     # don't forget to keep your secrets secret!
-    yt = YouTubeData(open('api_key.txt').read())
+    yt = await YouTubeData(open('api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")
@@ -17,6 +17,4 @@ async def main():
         async for c in my_video.comments(limit=10)
     ]))
 
-    
-    
 asyncio.run(main())
