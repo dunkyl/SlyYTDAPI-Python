@@ -113,7 +113,7 @@ class Video(APIObj['YouTubeData']):
     # dislike_count: int ## rest in peace
     comment_count: int
 
-    async def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
+    def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
         super().__init__(service)
         match source['id']:
             case str():
