@@ -115,7 +115,14 @@ class Video(APIObj['YouTubeData']):
 
     async def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
         super().__init__(service)
-        self.id = source['id']
+        match source['id']:
+            case str():
+                self.id = source['id']
+            case dict(): # case for video search result object
+                self.id = source['id']['videoId']
+            case _:
+                raise ValueError("Video expects source id to be a string or dict")
+        
         if snippet := source.get('snippet'):
             self.title = snippet['title']
             self.description = snippet['description']
@@ -155,7 +162,7 @@ class Playlist(APIObj['YouTubeData']):
         self.id = id
 
     def link(self) -> str:
-        F"https://www.youtube.com/playlist?list={self.id}"
+        return F"https://www.youtube.com/playlist?list={self.id}"
 
 class Channel(APIObj['YouTubeData']):
     id: str

@@ -25,6 +25,8 @@ class MemberLevel:
             }:
                 self.id = id
                 self.name = name
+            case _:
+                raise ValueError(f'Invalid source: {source}')
 
 class Membership:
     # part: snippet
