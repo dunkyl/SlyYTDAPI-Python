@@ -54,13 +54,12 @@ class Membership:
 class YouTubeData_WithMembers(YouTubeData):
 
     _poll_next_page_token: str|None = None
-    
-    async def _async_init(self, auth: str|OAuth2User, scope: Scope=Scope.MEMBERS):
-        if not Scope.MEMBERS in Scope: # todo: implement 'in' for EnumParam
-            raise ValueError("Access you youtube members requires the members scope.")
-        await super()._async_init(auth, scope)
-        
 
+    def __init__(self, auth: str | OAuth2User, scope: Scope = Scope.MEMBERS):
+        if not Scope.MEMBERS in Scope: # todo: implement 'in' for EnumParam
+            raise ValueError("Access to youtube members requires the members scope.")
+        super().__init__(auth, scope)
+    
     def get_my_members(self,
         level_id: str|None=None,
         member_channel_ids: list[str]|None=None,

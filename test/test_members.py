@@ -1,5 +1,7 @@
+import pytest
 from SlyYTDAPI import *
 
+@pytest.mark.skip(reason="special permissions required")
 async def test_members():
     yt = await YouTubeData_WithMembers(open('api_key.txt').read())
 

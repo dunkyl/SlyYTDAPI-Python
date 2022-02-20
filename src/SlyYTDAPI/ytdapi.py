@@ -217,15 +217,14 @@ class Channel(APIObj['YouTubeData']):
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    async def _async_init(self, auth: str|OAuth2User, scope: Scope=Scope.READONLY):
-        # if scope != Scope.YouTubeReadOnly:
-        #     raise ValueError("For access to YouTube members, use the YouTubeData_WithMembers subclass.")
+    def __init__(self, auth: str|OAuth2User, scope: Scope=Scope.READONLY):
         match auth:
             case str():
                 auth_ = APIKey('key', auth)
             case _:
                 auth_ = auth
-        await super()._async_init(auth=auth_)
+        super().__init__(auth_)
+        # TODO: use scope
 
     async def my_channel(self, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(mine=True, parts=parts, limit=1))[0]
