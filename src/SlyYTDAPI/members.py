@@ -75,9 +75,9 @@ class YouTubeData_WithMembers(YouTubeData):
             'filterByMemberChannelId': ','.join(member_channel_ids or []),
             'maxResults': 1000 if limit is None else min(1000, limit)
         }
-        return self.paginated( self.get_json, '/members', params,
-            limit
-        ).map(Membership)
+        return self.paginated(
+            '/members', params, limit
+            ).map(Membership)
 
     async def poll_new_members(self) -> list[Membership]:
         if self._poll_next_page_token is None:
