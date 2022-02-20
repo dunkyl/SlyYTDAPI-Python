@@ -1,8 +1,6 @@
-import asyncio
 from SlyYTDAPI import *
 
-async def main():
-    # don't forget to keep your secrets secret!
+async def test_readme():
     yt = await YouTubeData(open('api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
@@ -16,5 +14,3 @@ async def main():
         F"{c.author_name} > {c.body}"
         async for c in my_video.comments(limit=10)
     ]))
-
-asyncio.run(main())

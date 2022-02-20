@@ -1,8 +1,6 @@
-import asyncio
 from SlyYTDAPI import *
 
-async def main():
-    # don't forget to keep your secrets secret!
+async def test_playlists():
     yt = await YouTubeData(open('api_key.txt').read())
 
     seattle_mariners_soundtrack = \
@@ -10,5 +8,3 @@ async def main():
 
     for video in seattle_mariners_soundtrack:
         print(video.title)
- 
-asyncio.run(main())
