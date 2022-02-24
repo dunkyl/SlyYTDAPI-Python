@@ -1,7 +1,7 @@
 from SlyYTDAPI import *
 
 async def test_readme():
-    yt = await YouTubeData(open('api_key.txt').read())
+    yt = await YouTubeData(open('./test/api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")
