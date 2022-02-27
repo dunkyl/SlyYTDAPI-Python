@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Any
-from SlyAPI import EnumParam, WebAPI, AsyncTrans, OAuth2, APIKey
+from SlyAPI import *
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -217,16 +217,20 @@ class Channel(APIObj['YouTubeData']):
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    def __init__(self, auth: str|OAuth2, scope: Scope=Scope.READONLY):
-        match auth:
-            case str() if auth.endswith('.json'):
-                raise NotImplemented("TODO: implement json path for auth")
+    def __init__(self, app_or_api_key: str|OAuth2, user: str | OAuth2User | None = None, scope: Scope=Scope.READONLY):
+        if isinstance(user, str):
+            user = OAuth2User(user)
+
+        match app_or_api_key:
+            case str() if app_or_api_key.endswith('.json'):
+                auth = OAuth2(app_or_api_key, user)
             case str():
-                auth_ = APIKey('key', auth)
+                auth = APIKey('key', app_or_api_key)
             case _:
-                auth_ = auth
-        super().__init__(auth_)
-        # TODO: use scope
+                auth = app_or_api_key
+        super().__init__(auth)
+        if not isinstance(auth, APIKey):
+            auth.verify_scope(str(scope))
 
     async def my_channel(self, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(mine=True, parts=parts, limit=1))[0]
