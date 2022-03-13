@@ -1,4 +1,4 @@
-# ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) SlyYTDAPI: YouTube Data API
+# ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) Sly YouTube Data API for Python
 
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
@@ -19,6 +19,8 @@ Currently, the following topics are supported:
 * Comment threads
 * Video search
 * Channel members (requires approval from YouTube)
+
+For collecting statistics about your own channel using the YouTube analytics API, see [YTAAPI](https://github.com/dunkyl/SlyPyYTAAPI).
 
 ---
 
