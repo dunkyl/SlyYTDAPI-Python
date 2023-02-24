@@ -1,10 +1,12 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any
 from SlyAPI.oauth2 import OAuth2
 from SlyAPI import *
-from .ytdapi import YouTubeData, Scope, Part, yt_date
+from SlyAPI.web import JsonMap
+from .ytdapi import YouTubeData, Part, yt_date
 
-class MembersMode(EnumParam):
+class MembersMode(Enum):
     ALL_CURRENT = 'all_current'
     UPDATES = 'updates'
 
@@ -14,14 +16,19 @@ class MemberLevel:
     # part: snippet
     name: str
 
-    def __init__(self, source: dict[str, Any]):
+    def __init__(self, source: JsonMap):
         match source:
-            case {'id': id, 'snippet': snippet}:
-                self.id = id
-                self.name = snippet['creatorChannelId']
             case {
-                'highestAccessibleLevel': id,
-                'highestAccessibleLevelDisplayName': name
+                'id': str(id),
+                'snippet': {
+                    'levelDetails': {
+                        'displayName': str(name)
+                    } } }:
+                self.id = id
+                self.name = name
+            case {
+                'highestAccessibleLevel': str(id),
+                'highestAccessibleLevelDisplayName': str(name)
             }:
                 self.id = id
                 self.name = name
@@ -53,23 +60,22 @@ class Membership:
         
 class YouTubeData_WithMembers(YouTubeData):
 
-    _poll_next_page_token: str|None = None
+    _next_page: str|None = None
 
-    def __init__(self, auth: str | OAuth2, user: str | OAuth2User | None = None, scope: Scope = Scope.MEMBERS):
-        if not Scope.MEMBERS in Scope:
-            raise ValueError("Access to youtube members requires the members scope.")
-        super().__init__(auth, user, scope)
+    def __init__(self, auth: OAuth2) -> None:
+        super().__init__(auth)
     
     def get_my_members(self,
         level_id: str|None=None,
         member_channel_ids: list[str]|None=None,
-        parts: Part=Part.SNIPPET,
+        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncTrans[Membership]:
         if member_channel_ids is not None and len(member_channel_ids) > 100:
             raise ValueError('Cannot fetch more than 100 specific members.')
         mode = MembersMode.ALL_CURRENT
         params = {
-            **(parts+mode).to_dict(),
+            'part': parts,
+            'mode': mode,
             'hasAccessToLevel': level_id,
             'filterByMemberChannelId': ','.join(member_channel_ids or []),
             'maxResults': 1000 if limit is None else min(1000, limit)
@@ -79,19 +85,22 @@ class YouTubeData_WithMembers(YouTubeData):
             ).map(Membership)
 
     async def poll_new_members(self) -> list[Membership]:
-        if self._poll_next_page_token is None:
-            self._poll_next_page_token = (await self.get_json('/members'))['nextPageToken']
+        '''Polls for new members since the last call to this method.'''
+        if self._next_page is None:
+            # TODO: this doesn't seem right, please review
+            self._next_page = (await self.get_json('/members'))['nextPageToken']
             return []
         else:
             params = {
-                **(Part.SNIPPET+MembersMode.UPDATES).to_dict(),
-                'pageToken': self._poll_next_page_token
+                'part': Part.SNIPPET,
+                'membersMode': MembersMode.UPDATES,
+                'pageToken': self._next_page
             }
             response = await self.get_json('/members', params)
-            self._poll_next_page_token = response['nextPageToken']
+            self._next_page = response['nextPageToken']
             return [Membership(r) for r in response['items']]
 
-    async def get_my_levels(self, parts: Part=Part.ID+Part.SNIPPET) -> list[MemberLevel]:
-        params = parts.to_dict()
+    async def get_my_levels(self, parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> list[MemberLevel]:
+        params = { 'part': parts }
         levels = await self.get_json('/membershipsLevels', params)
         return [MemberLevel(r) for r in levels['items']]

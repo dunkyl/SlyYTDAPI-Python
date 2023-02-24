@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Any
@@ -6,11 +7,11 @@ from SlyAPI import *
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
-class Scope(EnumParam):
+class Scope:
     READONLY     = F"{SCOPES_ROOT}.readonly"
     MEMBERS      = F"{SCOPES_ROOT}.channel-memberships.creator"
 
-class Part(EnumParam):
+class Part(Enum):
     ID           = 'id'             # quota cost: 0
     DETAILS      = 'contentDetails' # quota cost: 2
     SNIPPET      = 'snippet'        # quota cost: 2
@@ -19,24 +20,24 @@ class Part(EnumParam):
     REPLIES      = 'replies'        # quota cost: 2
     # ...
 
-class PrivacyStatus(EnumParam):
+class PrivacyStatus(Enum):
     PRIVATE      = 'private'
     UNLISTED     = 'unlisted'
     PUBLIC       = 'public'
 
-class SafeSearch(EnumParam):
+class SafeSearch(Enum):
     SAFE         = 'strict'
     MODERATE     = 'moderate'
     UNSAFE       = 'none'
 
-class Order(EnumParam):
+class Order(Enum):
     DATE         = 'date'
     LIKES        = 'rating'
     RELEVANCE    = 'relevance'
     ALPHABETICAL = 'title'
     VIEWS        = 'viewCount'
 
-class CommentOrder(EnumParam):
+class CommentOrder(Enum):
     RELEVANCE    = 'relevance'
     TIME         = 'time'
 
@@ -55,13 +56,6 @@ def get_dict_path(d: dict[str, Any], *keys: str) -> Any:
         d = d[key]
     return d
     
-@dataclass
-class APIObj(Generic[W]):
-    _service: W
-
-    def __init__(self, service: W):
-        self._service = service
-
 class Comment:
     id: str
     # part: snippet
@@ -88,7 +82,8 @@ class Comment:
         
 
 
-class Video(APIObj['YouTubeData']):
+class Video:
+    _youtube: 'YouTubeData'
     id: str
 
     # part: snippet
@@ -113,8 +108,8 @@ class Video(APIObj['YouTubeData']):
     # dislike_count: int ## rest in peace
     comment_count: int
 
-    def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
-        super().__init__(service)
+    def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
+        self._youtube = yt
         match source['id']:
             case str():
                 self.id = source['id']
@@ -149,22 +144,24 @@ class Video(APIObj['YouTubeData']):
             return F"https://youtu.be/{self.id}"
 
     def comments(self, limit: int | None = 100) -> AsyncTrans[Comment]:
-        return self._service.comments(self.id, limit=limit)
+        return self._youtube.comments(self.id, limit=limit)
 
     async def channel(self) -> 'Channel':
-        return await self._service.channel(self.channel_id)
+        return await self._youtube.channel(self.channel_id)
 
-class Playlist(APIObj['YouTubeData']):
+class Playlist:
+    _youtube: 'YouTubeData'
     id: str
 
-    def __init__(self, id: str, service: 'YouTubeData'):
-        super().__init__(service)
+    def __init__(self, id: str, yt: 'YouTubeData'):
+        self._youtube = yt
         self.id = id
 
     def link(self) -> str:
         return F"https://www.youtube.com/playlist?list={self.id}"
 
-class Channel(APIObj['YouTubeData']):
+class Channel:
+    _youtube: 'YouTubeData'
     id: str
 
     # part: snippet
@@ -182,8 +179,8 @@ class Channel(APIObj['YouTubeData']):
     subscriber_count: int
     video_count: int
 
-    def __init__(self, source: dict[str, Any], service: 'YouTubeData'):
-        super().__init__(service)
+    def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
+        self._youtube = yt
 
         self.id = source['id']
         if snippet := source.get('snippet'):
@@ -194,7 +191,7 @@ class Channel(APIObj['YouTubeData']):
             self.custom_url = snippet.get('customUrl')
 
         if details := source.get('contentDetails'):
-            self.uploads_playlist = Playlist(details['relatedPlaylists']['uploads'], service)
+            self.uploads_playlist = Playlist(details['relatedPlaylists']['uploads'], yt)
 
         if stats := source.get('statistics'):
             self.view_count = int(stats['viewCount'])
@@ -208,29 +205,22 @@ class Channel(APIObj['YouTubeData']):
             return F"https://www.youtube.com/channels/{self.id}"
 
     async def update(self):
-        new = await self._service.channel(self.id)
+        new = await self._youtube.channel(self.id)
         self.__dict__.update(new.__dict__)
 
     def videos(self, limit: int|None=None, mine: bool|None=None) -> AsyncTrans[Video]:
-        return self._service.search_videos(channel_id=self.id, limit=limit, mine=mine)
+        return self._youtube.search_videos(channel_id=self.id, limit=limit, mine=mine)
 
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    def __init__(self, app_or_api_key: str|OAuth2, user: str | OAuth2User | None = None, scope: Scope=Scope.READONLY):
-        if isinstance(user, str):
-            user = OAuth2User(user)
-
+    def __init__(self, app_or_api_key: str|OAuth2) -> None:
         match app_or_api_key:
-            case str() if app_or_api_key.endswith('.json'):
-                auth = OAuth2(app_or_api_key, user)
             case str():
-                auth = APIKey('key', app_or_api_key)
+                auth = UrlApiKey('key', app_or_api_key)
             case _:
                 auth = app_or_api_key
         super().__init__(auth)
-        if not isinstance(auth, APIKey):
-            auth.verify_scope(str(scope))
 
     async def my_channel(self, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(mine=True, parts=parts, limit=1))[0]
@@ -244,12 +234,12 @@ class YouTubeData(WebAPI):
     def _channels_list(self,
         channel_ids: list[str]|None=None,
         mine: bool=False,
-        parts: Part=Part.SNIPPET,
+        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncTrans[Channel]:
         if mine==bool(channel_ids):
             raise ValueError("Must specify exactly one of channel id or mine in channel list query")
         params = {
-            **parts.to_dict(),
+            'part': parts,
             'mine': mine if mine else None,
             'id': ','.join(channel_ids) if channel_ids else None,
             'maxResults': min(50, limit) if limit else None,
@@ -260,24 +250,24 @@ class YouTubeData(WebAPI):
 
     def videos(self,
         video_ids: list[str],
-        parts: Part=Part.ID+Part.SNIPPET) -> AsyncTrans[Video]:
+        parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> AsyncTrans[Video]:
         params = {
-            **parts.to_dict(),
+            'part': parts,
             'id': ','.join(video_ids),
         }
         return self.paginated(
             '/videos', params, None
             ).map(lambda r: Video(r, self))
 
-    async def video(self, id: str, parts: Part=Part.ID+Part.SNIPPET) -> Video:
+    async def video(self, id: str, parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> Video:
         return (await self.videos([id], parts))[0]
 
     def get_playlist_videos(self,
         playlist_id: str, 
-        parts: Part=Part.SNIPPET,
+        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncTrans[Video]:
         params = {
-            **parts.to_dict(),
+            'part': parts,
             'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
         }
@@ -293,10 +283,12 @@ class YouTubeData(WebAPI):
         mine: bool|None=None,
         order: Order=Order.RELEVANCE,
         safeSearch: SafeSearch=SafeSearch.MODERATE,
-        parts: Part=Part.SNIPPET,
+        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=50) -> AsyncTrans[Video]:
         params = {
-            **(parts+safeSearch+order).to_dict(),
+            'part': parts,
+            'safeSearch': safeSearch,
+            'order': order,
             'type': 'video',
             'q': query,
             'channelId': channel_id,
@@ -313,11 +305,12 @@ class YouTubeData(WebAPI):
     def comments(self,
         video_id: str,
         query: str|None=None,
-        parts: Part=Part.SNIPPET+Part.REPLIES,
+        parts: Part|set[Part]={Part.SNIPPET,Part.REPLIES},
         order: CommentOrder=CommentOrder.TIME,
         limit: int|None=None) -> AsyncTrans[Comment]:
         params = {
-            **(parts+order).to_dict(),
+            'part': parts,
+            'commentOrder': order,
             'searchTerms': query,
             'videoId': video_id,
             'maxResults': min(100, limit) if limit else None,
