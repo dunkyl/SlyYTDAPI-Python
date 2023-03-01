@@ -1,10 +1,26 @@
+'''
+YouTube Members Endpoints for the Data API v3
+https://developers.google.com/youtube/v3/docs/members
+'''
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, TypedDict, cast
 from SlyAPI.oauth2 import OAuth2
 from SlyAPI import *
 from SlyAPI.web import JsonMap
 from .ytdapi import YouTubeData, Part, yt_date
+
+class _MembersPollResponse(TypedDict):
+    kind: str
+    etag: str
+    nextPageToken: str
+    pageInfo: dict[str, int]
+    items: list[dict[str, Any]]
+
+class _MembersLevelsResponse(TypedDict):
+    kind: str
+    etag: str
+    items: list[dict[str, Any]]
 
 class MembersMode(Enum):
     ALL_CURRENT = 'all_current'
@@ -18,7 +34,7 @@ class MemberLevel:
 
     def __init__(self, source: JsonMap):
         match source:
-            case {
+            case { # from /membershipsLevels endpoint
                 'id': str(id),
                 'snippet': {
                     'levelDetails': {
@@ -26,7 +42,7 @@ class MemberLevel:
                     } } }:
                 self.id = id
                 self.name = name
-            case {
+            case { # as part of Member resource
                 'highestAccessibleLevel': str(id),
                 'highestAccessibleLevelDisplayName': str(name)
             }:
@@ -83,24 +99,30 @@ class YouTubeData_WithMembers(YouTubeData):
         return self.paginated(
             '/members', params, limit
             ).map(Membership)
+    
+    async def _members_poll(self, pageToken: str|None) -> _MembersPollResponse:
+        params = {
+            'part': Part.SNIPPET,
+            'membersMode': MembersMode.UPDATES,
+            'pageToken': pageToken
+        }
+        return cast(_MembersPollResponse, await self.get_json('/members', params))
+    
+    async def _memberships_levels(self, parts: Part|set[Part]) -> _MembersLevelsResponse:
+        params = { 'part': parts }
+        return cast(_MembersLevelsResponse, await self.get_json('/membershipsLevels', params))
 
     async def poll_new_members(self) -> list[Membership]:
         '''Polls for new members since the last call to this method.'''
         if self._next_page is None:
-            # TODO: this doesn't seem right, please review
-            self._next_page = (await self.get_json('/members'))['nextPageToken']
+            # first call for 'updates' mode does not return any members
+            # but it does return a nextPageToken always
+            self._next_page = (await self._members_poll(None))['nextPageToken']
             return []
         else:
-            params = {
-                'part': Part.SNIPPET,
-                'membersMode': MembersMode.UPDATES,
-                'pageToken': self._next_page
-            }
-            response = await self.get_json('/members', params)
+            response = await self._members_poll(self._next_page)
             self._next_page = response['nextPageToken']
             return [Membership(r) for r in response['items']]
 
-    async def get_my_levels(self, parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> list[MemberLevel]:
-        params = { 'part': parts }
-        levels = await self.get_json('/membershipsLevels', params)
-        return [MemberLevel(r) for r in levels['items']]
+    async def get_my_levels(self) -> list[MemberLevel]:
+        return [MemberLevel(r) for r in (await self._memberships_levels({Part.ID,Part.SNIPPET}))['items']]
