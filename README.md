@@ -52,3 +52,17 @@ async def main():
     
 asyncio.run(main())
 ```
+
+---
+
+Example CLI usage for getting authorized:
+
+```sh
+# WINDOWS
+py -m SlyYTDAPI grant
+# MacOS or Linux
+python3 -m SlyYTDAPI grant
+```
+
+Granting credentials requires a Google Cloud Console account and JSON file.
+Please see https://docs.dunkyl.net/SlyAPI-Python/tutorial/oauth2.html for more information.
