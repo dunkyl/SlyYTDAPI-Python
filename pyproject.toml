@@ -1,9 +1,35 @@
-[build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+[project]
+name = "SlyYTDAPI"
+version = "0.2.0"
+description = "No-boilerplate, async and typed YouTube Data API access."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file="LICENSE" }
+authors = [{name="Dunkyl 🔣🔣"}]
+dependencies = [ 'SlyAPI >= 0.4.3' ]
+
+[project.optional-dependencies]
+dev = [
+    # testing
+    'pytest',
+    'pytest-asyncio',
+
+    # docs
+    'myst-parser',
+    'furo',
+    'sphinxcontrib-trio',
+    'sphinx-copybutton',
+    'sphinxext-opengraph'
 ]
-build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://docs.dunkyl.net/SlyYTDAPI-Python/"
+Repository = "https://github.com/dunkyl/SlyYTDAPI-Python"
+Documentation = "https://docs.dunkyl.net/SlyYTDAPI-Python/"
+"Bug Tracker" = "https://github.com/dunkyl/SlyYTDAPI-Python/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
