@@ -1,5 +1,7 @@
 # ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo.svg) Sly YouTube Data API for Python
 
+<!-- elevator begin -->
+
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
 > 🐍 For Python 3.10+
@@ -20,7 +22,9 @@ Currently, the following topics are supported:
 * Video search
 * Channel members (requires approval from YouTube)
 
-For collecting statistics about your own channel using the YouTube analytics API, see [YTAAPI](https://github.com/dunkyl/SlyPyYTAAPI).
+For collecting statistics about your own channel using the YouTube analytics API, see [YTAAPI](https://github.com/dunkyl/SlyYTAAPI-Python).
+
+<!-- elevator end -->
 
 ---
 
@@ -32,7 +36,7 @@ from SlyYTDAPI import *
 
 async def main():
     # don't forget to keep your secrets secret!
-    yt = await YouTubeData(open('api_key.txt').read())
+    yt = YouTubeData(open('api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")

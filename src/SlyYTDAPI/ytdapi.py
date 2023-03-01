@@ -1,8 +1,7 @@
 import re
 from enum import Enum
 from datetime import datetime
-from dataclasses import dataclass
-from typing import Generic, TypeVar, Any
+from typing import TypeVar, Any
 from SlyAPI import *
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
