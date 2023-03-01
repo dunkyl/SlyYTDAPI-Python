@@ -214,7 +214,7 @@ class Channel:
 class YouTubeData(WebAPI):
     base_url = 'https://www.googleapis.com/youtube/v3'
 
-    def __init__(self, app_or_api_key: str|OAuth2) -> None:
+    def __init__(self, app_or_api_key: str|OAuth2|UrlApiKey) -> None:
         match app_or_api_key:
             case str():
                 auth = UrlApiKey('key', app_or_api_key)
