@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2023-07-30
+
 Since the last release, YouTube introduced a new username system.
 It is important to note that `Comment` in most cases does **not** have the @username of the commenter, and it must instead be retrieved using `YouTubeData.channels` (for many channels at once) or `YouTubeData.channel` (for just one channel at a time).
 
@@ -17,8 +21,6 @@ Commenters are still uniquely identified by `Comment.author_channel_id`.
 ### Fixed
 - `Channel.created_at` deserialization format now accepts seconds fraction
 - `YouTubeData.channels` no longer bad request when using >50 channel IDs
-
----
 
 ## [0.2.0] - 2023-03-01
 
