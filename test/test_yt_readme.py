@@ -1,7 +1,8 @@
+import os
 from SlyYTDAPI import *
-
+test_dir = os.path.dirname(__file__)
 async def test_readme():
-    yt = YouTubeData(open('./test/api_key.txt').read())
+    yt = YouTubeData(open(F'{test_dir}/api_key.txt').read())
 
     my_video = await yt.video('dQw4w9WgXcQ')
     print(F"Check this out!\n{my_video.link()}")

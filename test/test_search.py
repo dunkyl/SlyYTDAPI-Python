@@ -1,7 +1,8 @@
+import os
 from SlyYTDAPI import *
-
+test_dir = os.path.dirname(__file__)
 async def test_search():
-    yt = YouTubeData(open('./test/api_key.txt').read())
+    yt = YouTubeData(open(F'{test_dir}/api_key.txt').read())
 
     search_results = await yt.search_videos('gangnam style', limit=5)
 

@@ -2,7 +2,7 @@ import re
 from enum import Enum
 from datetime import datetime
 from typing import TypeVar, Any
-from typing_extensions import deprecated
+from warnings import warn
 from SlyAPI import *
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
@@ -69,9 +69,10 @@ class Comment:
     # part: replies
     replies: list['Comment']|None
 
-    @deprecated("use author_display_name")
     @property
-    def name(self): return self.author_display_name
+    def author_name(self):
+        warn("author_name is deprecated, please use author_display_name")
+        return self.author_display_name
 
     def __init__(self, source: dict[str, Any]):
         # case of top-level comment
@@ -186,13 +187,16 @@ class Channel:
     subscriber_count: int
     video_count: int
 
-    @deprecated("use at_username")
     @property
-    def custom_url(self): return self.at_username
+    def custom_url(self):
+        warn("custom_url is deprecated, please use at_username")
+        return self.at_username
 
-    @deprecated("use display_name")
+    
     @property
-    def name(self): return self.display_name
+    def name(self):
+        warn("name is deprecated, please use display_name")
+        return self.display_name
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
