@@ -4,6 +4,12 @@
 
 ---
 
+## [0.3.1] - 2023-07-30
+
+### Fixed
+
+- `Comment.author_display_name` is now set correctly
+
 ## [0.3.0] - 2023-07-30
 
 Since the last release, YouTube introduced a new username system.
