@@ -5,4 +5,4 @@ async def test_channels():
 
     channel = await yt.channel('UCy0tKL1T7wFoYcxCe0xjN6Q')
 
-    print(channel.name)
+    print(channel.display_name)

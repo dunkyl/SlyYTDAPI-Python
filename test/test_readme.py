@@ -11,7 +11,7 @@ async def test_readme():
 
     # or opt in to generators
     print('\n---\n'.join([
-        F"{c.author_name} > {c.body}"
+        F"{c.display_name} > {c.body}"
         async for c in my_video.comments(limit=10)
     ]))
 

@@ -2,6 +2,7 @@ import re
 from enum import Enum
 from datetime import datetime
 from typing import TypeVar, Any
+from typing_extensions import deprecated
 from SlyAPI import *
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
@@ -43,7 +44,10 @@ class CommentOrder(Enum):
 ISO8601_PERIOD = re.compile(r'P(\d+)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
 
 def yt_date(date: str) -> datetime:
-    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    try:
+        return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    except ValueError:
+        return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
 
 W = TypeVar('W')
 T = TypeVar('T')
@@ -58,12 +62,16 @@ def get_dict_path(d: dict[str, Any], *keys: str) -> Any:
 class Comment:
     id: str
     # part: snippet
-    author_name: str
+    author_display_name: str
     author_channel_id: str
     body: str
     created_at: datetime
     # part: replies
     replies: list['Comment']|None
+
+    @deprecated("use author_display_name")
+    @property
+    def name(self): return self.author_display_name
 
     def __init__(self, source: dict[str, Any]):
         # case of top-level comment
@@ -74,7 +82,7 @@ class Comment:
             
         self.id = source['id']
         if snippet := source.get('snippet'):
-            self.author_name = snippet['authorDisplayName']
+            self.display_name = snippet['authorDisplayName']
             self.author_channel_id = snippet['authorChannelId']['value']
             self.body = snippet['textDisplay']
             self.created_at = yt_date(snippet['publishedAt'])
@@ -164,11 +172,11 @@ class Channel:
     id: str
 
     # part: snippet
-    name: str
+    display_name: str
     description: str
     created_at: datetime
+    at_username: str
     profile_image_url: str|None = None
-    custom_url: str|None = None
 
     # part: contentDetails
     uploads_playlist: Playlist
@@ -178,16 +186,24 @@ class Channel:
     subscriber_count: int
     video_count: int
 
+    @deprecated("use at_username")
+    @property
+    def custom_url(self): return self.at_username
+
+    @deprecated("use display_name")
+    @property
+    def name(self): return self.display_name
+
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
 
         self.id = source['id']
         if snippet := source.get('snippet'):
-            self.name = snippet['title']
+            self.display_name = snippet['title']
             self.description = snippet['description']
             self.created_at = yt_date(snippet['publishedAt'])
             self.profile_image_url = snippet.get('thumbnails', {}).get('default', {}).get('url')
-            self.custom_url = snippet.get('customUrl')
+            self.at_username = snippet.get('customUrl')
 
         if details := source.get('contentDetails'):
             self.uploads_playlist = Playlist(details['relatedPlaylists']['uploads'], yt)
@@ -198,8 +214,8 @@ class Channel:
             self.video_count = int(stats['videoCount'])
 
     def link(self) -> str:
-        if self.custom_url:
-            return F"https://www.youtube.com/c/{self.custom_url}"
+        if self.at_username:
+            return F"https://www.youtube.com/c/{self.at_username}"
         else:
             return F"https://www.youtube.com/channels/{self.id}"
 
@@ -237,15 +253,23 @@ class YouTubeData(WebAPI):
         limit: int|None=None) -> AsyncTrans[Channel]:
         if mine==bool(channel_ids):
             raise ValueError("Must specify exactly one of channel id or mine in channel list query")
-        params = {
-            'part': parts,
-            'mine': mine if mine else None,
-            'id': ','.join(channel_ids) if channel_ids else None,
-            'maxResults': min(50, limit) if limit else None,
-        }
-        return self.paginated(
-            '/channels', params, limit
-            ).map(lambda r: Channel(r, self))
+        maxResults = min(50, limit) if limit else None # per-page limit
+        params = { 'part': parts, 'maxResults': maxResults }
+        if channel_ids:
+            channel_ids = list(set(channel_ids or [])) # deduplicate IDs
+            channels_chunks50 = [
+                channel_ids[i: i + 50] for i in range(0, len(channel_ids), 50)
+            ]
+            async def page_chunks():
+                for ids in channels_chunks50:
+                    p = params | { 'id': ','.join(ids) }
+                    async for c in self.paginated('/channels', p, limit):
+                        yield c
+            return AsyncLazy(page_chunks()).map(lambda r: Channel(r, self))
+        else: # mine
+            return self.paginated(
+                '/channels', params | { 'mine': True }, limit
+                ).map(lambda r: Channel(r, self))
 
     def videos(self,
         video_ids: list[str],
