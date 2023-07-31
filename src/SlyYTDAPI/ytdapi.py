@@ -83,7 +83,7 @@ class Comment:
             
         self.id = source['id']
         if snippet := source.get('snippet'):
-            self.display_name = snippet['authorDisplayName']
+            self.author_display_name = snippet['authorDisplayName']
             self.author_channel_id = snippet['authorChannelId']['value']
             self.body = snippet['textDisplay']
             self.created_at = yt_date(snippet['publishedAt'])
