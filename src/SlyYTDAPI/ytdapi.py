@@ -12,12 +12,16 @@ class Scope:
     MEMBERS      = F"{SCOPES_ROOT}.channel-memberships.creator"
 
 class Part(Enum):
-    ID           = 'id'             # quota cost: 0
-    DETAILS      = 'contentDetails' # quota cost: 2
-    SNIPPET      = 'snippet'        # quota cost: 2
-    STATUS       = 'status'         # quota cost: 2
-    STATISTICS   = 'statistics'     # quota cost: 2
-    REPLIES      = 'replies'        # quota cost: 2
+    ID                      = 'id'                          # quota cost: 0
+    DETAILS                 = 'contentDetails'              # quota cost: 2
+    SNIPPET                 = 'snippet'                     # quota cost: 2
+    STATUS                  = 'status'                      # quota cost: 2
+    STATISTICS              = 'statistics'                  # quota cost: 2
+    REPLIES                 = 'replies'                     # quota cost: 2
+    LIVESTREAM_DETAILS      = 'liveStreamingDetails'        # quota cost: x
+    TOPIC_DETAILS           = 'topicDetails'                # quota cost: x
+    RECORDING_DETAILS       = 'topicDetails'                # quota cost: x
+    LOCALIZATIONS           = 'topicDetails'                # quota cost: x
     # ...
 
 class PrivacyStatus(Enum):
@@ -102,9 +106,14 @@ class Video:
     channel_name: str
     tags: list[str]
     is_livestream: bool
+    default_audio_language: str | None
+    
 
     # part: contentDetails
     duration: int
+    is_licensed: bool | None
+    blocked_in: list[str] | None
+    allowed_in: list[str] | None
 
     # part: status
     privacy: PrivacyStatus
@@ -115,6 +124,18 @@ class Video:
 
     # dislike_count: int ## rest in peace
     comment_count: int
+
+    # part: liveStreamingDetails
+    livestream_details: dict[str, Any] | None
+    
+    # part: topicDetails
+    topic_categories: list[str] | None
+    
+    # part: localizations
+    localizations: dict[str, Any] | None
+    
+    # part: recordingDetails
+    recording_details: dict[str, Any] | None
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
@@ -134,6 +155,7 @@ class Video:
             self.channel_name = snippet['channelTitle']
             self.tags = snippet.get('tags', [])
             self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
+            self.default_audio_language = snippet.get('defaultAudioLanguage')
         if contentDetails := source.get('contentDetails'):
             m = ISO8601_PERIOD.match(contentDetails['duration'])
             if m:
@@ -141,9 +163,19 @@ class Video:
                 self.duration = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
             else:
                 raise ValueError(F"Unknown duration format: {contentDetails['duration']}")
+            self.is_licensed=contentDetails.get('licensedContent')
+            self.blocked_in=contentDetails.get("regionRestriction", {}).get("blocked")
+            self.allowed_in=contentDetails.get("regionRestriction", {}).get("allowed")
         if status := source.get('status'):
             self.privacy = status['privacyStatus']
-
+        if liveStreamingDetails := source.get('liveStreamingDetails'):
+            self.livestream_details=liveStreamingDetails
+        if topicDetails := source.get('topicDetails'):
+            self.topic_categories=topicDetails.get('topicCategories')
+        if recordingDetails := source.get('recordingDetails'):
+            self.recording_details=recordingDetails
+        if localizations := source.get('localizations'):
+            self.localizations=localizations
 
     def link(self, short: bool = False) -> str:
         if not short:
