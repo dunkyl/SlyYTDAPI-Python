@@ -107,23 +107,38 @@ class Video:
     tags: list[str]
     is_livestream: bool
     default_audio_language: str | None
-    
+    thumbnails: list[str] | None = None
+    localized_title: str | None = None
+    localized_description: str | None = None
 
     # part: contentDetails
-    duration: int
-    is_licensed: bool | None
-    blocked_in: list[str] | None
-    allowed_in: list[str] | None
+    duration: int | None = None
+    is_licensed: bool | None = None
+    blocked_in: list[str] | None = None
+    allowed_in: list[str] | None = None
+    dimension: str | None = None
+    definition: str | None = None
+    caption: str | None = None
+    projection: str | None = None
 
     # part: status
     privacy: PrivacyStatus
+    upload_status: str | None = None
+    failure_reason: str | None = None
+    rejection_reason: str | None = None
+    license: str | None = None
+    is_embeddable: bool | None = None
+    has_viewable_stats: bool | None = None
+    is_made_for_kids: bool | None = None
+    self_declared_made_for_kids: bool | None = None
 
     # part: statistics
-    view_count: int
-    like_count: int
+    view_count: int | None = None
+    like_count: int | None = None
+    favourite_count: int | None = None
 
     # dislike_count: int ## rest in peace
-    comment_count: int
+    comment_count: int | None = None
 
     # part: liveStreamingDetails
     livestream_details: dict[str, Any] | None
@@ -135,7 +150,7 @@ class Video:
     localizations: dict[str, Any] | None
     
     # part: recordingDetails
-    recording_details: dict[str, Any] | None
+    recording_date: datetime | None
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
@@ -156,6 +171,11 @@ class Video:
             self.tags = snippet.get('tags', [])
             self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
             self.default_audio_language = snippet.get('defaultAudioLanguage')
+
+            self.thumbnails = [x.get("url") for x in snippet.get("thumbnails", {}).values()]
+            self.localized_title = snippet.get("localized", {}).get("title")
+            self.localized_description = snippet.get("localized", {}).get("description")    
+
         if contentDetails := source.get('contentDetails'):
             m = ISO8601_PERIOD.match(contentDetails['duration'])
             if m:
@@ -166,14 +186,62 @@ class Video:
             self.is_licensed=contentDetails.get('licensedContent')
             self.blocked_in=contentDetails.get("regionRestriction", {}).get("blocked")
             self.allowed_in=contentDetails.get("regionRestriction", {}).get("allowed")
+            
+            self.dimension=contentDetails.get("dimension")
+            self.definition=contentDetails.get("definition")
+            self.caption=contentDetails.get("caption")
+            self.projection=contentDetails.get("projection")
+            # TODO: contentRating
+
         if status := source.get('status'):
-            self.privacy = status['privacyStatus']
+            self.privacy = status.get('privacyStatus')
+            
+            self.uploadStatus = status.get('uploadStatus')
+            self.failureReason = status.get('failureReason')
+            self.rejectionReason = status.get('rejectionReason')
+            self.license = status.get('license')
+            self.is_embeddable = status.get('embeddable')
+            self.has_viewable_stats = status.get('publicStatsViewable')
+            self.is_made_for_kids = status.get('madeForKids')
+            self.self_declared_made_for_kids = status.get('selfDeclaredMadeForKids')
+
+        if statistics := source.get('statistics'):
+            self.view_count = int(statistics['viewCount'])
+            self.like_count = int(statistics['likeCount'])
+            self.comment_count = int(statistics['commentCount'])
+            self.favourite_count = int(statistics['favouriteCount'])
+
         if liveStreamingDetails := source.get('liveStreamingDetails'):
             self.livestream_details=liveStreamingDetails
+
         if topicDetails := source.get('topicDetails'):
             self.topic_categories=topicDetails.get('topicCategories')
+
         if recordingDetails := source.get('recordingDetails'):
-            self.recording_details=recordingDetails
+            self.recording_date=recordingDetails.get('recordingDate')
+
+        if fileDetails := source.get('fileDetails'):
+            self.file_name = fileDetails.get('fileName')
+            self.file_size = fileDetails.get('fileSize')
+            self.file_type = fileDetails.get('fileType')
+            self.container = fileDetails.get('container')
+            self.durationMs = fileDetails.get('durationMs')
+            self.bitrateBps = fileDetails.get('bitrateBps')
+            self.creationTime = fileDetails.get('creationTime')
+            # TODO: videoStreams
+            # TODO: audioStreams
+
+        if suggestions := source.get('suggestions'):
+            self.processing_errors = suggestions.get('processingErrors')
+            self.processing_warnings = suggestions.get('processingWarnings')
+            self.processing_hints = suggestions.get('processingHints')
+            self.tag_suggestions = suggestions.get('tagSuggestions')
+            self.editor_suggestions = suggestions.get('editorSuggestions')
+
+        if processingDetails := source.get('processingDetails'):
+            self.processing_status = processingDetails.get('processingStatus')
+            self.processing_progress = processingDetails.get('processingProgress')
+            
         if localizations := source.get('localizations'):
             self.localizations=localizations
 
