@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+import inspect
 import re
 from enum import Enum
 from datetime import datetime, timezone
@@ -12,18 +14,31 @@ class Scope:
     MEMBERS      = F"{SCOPES_ROOT}.channel-memberships.creator"
 
 class Part(Enum):
-    ID           = 'id'             # quota cost: 0
-    DETAILS      = 'contentDetails' # quota cost: 2
-    SNIPPET      = 'snippet'        # quota cost: 2
-    STATUS       = 'status'         # quota cost: 2
-    STATISTICS   = 'statistics'     # quota cost: 2
-    REPLIES      = 'replies'        # quota cost: 2
-    # ...
+    ID                      = 'id'
+    DETAILS                 = 'contentDetails'
+    SNIPPET                 = 'snippet'
+    STATUS                  = 'status'
+    STATISTICS              = 'statistics'
+    REPLIES                 = 'replies'
+    LOCALIZATIONS           = 'localizations'
+    EMBED                   = 'player'
+    LIVESTREAM_DETAILS      = 'liveStreamingDetails'
+    TOPIC_CATEGORIES        = 'topicDetails'
+    RECORDING_DETAILS       = 'recordingDetails'
+    FILE_DETAILS            = 'fileDetails'
+    # only if authorized by channel owner
+    PROCESSING_DETAILS      = 'processingDetails'
 
 class PrivacyStatus(Enum):
     PRIVATE      = 'private'
     UNLISTED     = 'unlisted'
     PUBLIC       = 'public'
+
+class ProcessingStatus(Enum):
+    FAILED       = 'failed'
+    PROCESSING   = 'processing'
+    SUCCEEDED    = 'succeeded'
+    TERMINATED   = 'terminated'
 
 class SafeSearch(Enum):
     SAFE         = 'strict'
@@ -41,13 +56,23 @@ class CommentOrder(Enum):
     RELEVANCE    = 'relevance'
     TIME         = 'time'
 
-ISO8601_PERIOD = re.compile(r'P(\d+)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
+ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
 
 def yt_date(date: str) -> datetime:
-    try:
-        return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
-    except ValueError:
-        return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    if date.endswith('Z'):
+        try:
+            datetime.fromisoformat
+            return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        except ValueError:
+            return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    else:
+        return datetime.fromisoformat(date)
+    
+def yt_date_or_none(date: str|None) -> datetime|None:
+    if date is not None:
+        return yt_date(date)
+    else:
+        return None
 
 W = TypeVar('W')
 T = TypeVar('T')
@@ -88,7 +113,98 @@ class Comment:
             self.body = snippet['textDisplay']
             self.created_at = yt_date(snippet['publishedAt'])
         
+@dataclass
+class EmbedInfo:
+    embedHtml: str
+    embedHeight: int
+    embedWidth: int
 
+@dataclass
+class ContentDetails:
+    duration: int
+    is_licensed: bool
+    blocked_in: list[str]
+    allowed_in: list[str]
+    rating: dict[str, str]
+    dimension: str
+    definition: str
+    caption: str
+    projection: str
+
+@dataclass
+class StatusDetails:
+    privacy: PrivacyStatus
+    upload_status: str
+    failure_reason: str | None
+    rejection_reason: str | None
+    license: str
+    is_embeddable: bool
+    has_viewable_stats: bool
+    is_made_for_kids: bool
+    # only if authorized by channel owner
+    self_declared_made_for_kids: bool | None
+
+@dataclass
+class VideoPublicStatistics:
+    view_count: int
+    like_count: int
+    comment_count: int
+
+@dataclass
+class FileDetails:
+    @dataclass
+    class VideoStream:
+        width: int
+        height: int
+        framerate: float
+        aspect_ratio: float
+        codec: str
+        bitrate: int
+        rotation: str
+        vendor: str
+    videoStreams: list[VideoStream]
+
+    @dataclass
+    class AudioStream:
+        channels_count: int
+        codec: str
+        bitrate: str
+        vendor: str
+    audioStreams: list[AudioStream]
+
+    name: str
+    bytes: int
+    type: str
+    container: str
+    duration_milliseconds: int
+    bitrate: int
+    created_at: datetime
+
+
+@dataclass
+class LivestreamDetails:
+    # only available after stream starts
+    viewers: int | None
+    started_at: datetime | None
+    # only available after stream ends
+    ended_at: datetime | None
+
+    scheduled_start: datetime
+    scheduled_end: datetime | None
+    chat_id: str
+    
+@dataclass
+class ProcessingDetails:
+    status: ProcessingStatus
+    parts_total: int | None
+    parts_processed: int | None
+    milliseconds_remaining: int | None
+    failureReason: str | None
+
+@dataclass
+class VideoLocalization:
+    title: str
+    description: str
 
 class Video:
     _youtube: 'YouTubeData'
@@ -102,19 +218,54 @@ class Video:
     channel_name: str
     tags: list[str]
     is_livestream: bool
+    default_audio_language: str | None
+    thumbnails: list[str] | None = None
+    localized_title: str | None = None
+    localized_description: str | None = None
 
     # part: contentDetails
-    duration: int
+    duration: int | None = None
+    content_details: ContentDetails | None = None
 
     # part: status
-    privacy: PrivacyStatus
+    privacy: PrivacyStatus | None = None
+    status_details: StatusDetails | None = None
 
     # part: statistics
-    view_count: int
-    like_count: int
+    view_count: int | None = None
+    like_count: int | None = None
 
     # dislike_count: int ## rest in peace
-    comment_count: int
+    comment_count: int | None = None
+
+    # part: liveStreamingDetails
+    livestream_details: LivestreamDetails | None
+    
+    # part: topicDetails
+    topic_categories: list[str] | None = None
+    
+    # part: localizations
+    localizations: dict[str, VideoLocalization] | None = None
+    
+    # part: recordingDetails
+    recorded_at: datetime | None = None
+
+    # part: fileDetails
+    file_details: FileDetails | None = None
+
+    # part: processingDetails
+    processing_details: ProcessingDetails | None = None
+    
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Returns a dictionary representation of the Video object.
+        """
+        return {
+            name: member for name, member in inspect.getmembers(self)
+            if not name.startswith('_')
+                and not inspect.isfunction(member)
+                and not inspect.ismethod(member)
+        }
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
@@ -134,6 +285,12 @@ class Video:
             self.channel_name = snippet['channelTitle']
             self.tags = snippet.get('tags', [])
             self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
+            self.default_audio_language = snippet.get('defaultAudioLanguage')
+
+            self.thumbnails = [x.get("url") for x in snippet.get("thumbnails", {}).values()]
+            self.localized_title = snippet.get("localized", {}).get("title")
+            self.localized_description = snippet.get("localized", {}).get("description")    
+
         if contentDetails := source.get('contentDetails'):
             m = ISO8601_PERIOD.match(contentDetails['duration'])
             if m:
@@ -141,9 +298,85 @@ class Video:
                 self.duration = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
             else:
                 raise ValueError(F"Unknown duration format: {contentDetails['duration']}")
+            self.content_details = ContentDetails(
+                self.duration,
+                contentDetails['licensedContent'],
+                contentDetails.get("regionRestriction", {}).get("blocked", []),
+                contentDetails.get("regionRestriction", {}).get("allowed", []),
+                contentDetails["dimension"],
+                contentDetails["definition"],
+                contentDetails["caption"],
+                contentDetails["projection"],
+            )
+
         if status := source.get('status'):
             self.privacy = status['privacyStatus']
+            self.status_details = StatusDetails(
+                self.privacy,
+                status['uploadStatus'],
+                status.get('failureReason'),
+                status.get('rejectionReason'),
+                status['license'],
+                status['embeddable'],
+                status['publicStatsViewable'],
+                status['madeForKids'],
+                status.get('selfDeclaredMadeForKids')
+            )
 
+        if statistics := source.get('statistics'):
+            self.view_count = int(statistics['viewCount'])
+            self.like_count = int(statistics['likeCount'])
+            self.comment_count = int(statistics['commentCount'])
+
+        if stream := source.get('liveStreamingDetails'):
+            self.livestream_details = LivestreamDetails(
+                stream.get('concurrentViewers'),
+                yt_date_or_none(stream.get('actualStartTime')),
+                yt_date_or_none(stream.get('actualEndTime')),
+                yt_date(stream['scheduledStartTime']),
+                yt_date_or_none(stream.get('scheduledEndTime')),
+                stream['activeLiveChatId']
+            )
+
+        if topic_details := source.get('topicDetails'):
+            self.topic_categories = topic_details.get('topicCategories', None)
+
+        if recording_details := source.get('recordingDetails'):
+            self.recorded_at = yt_date(recording_details.get('recordingDate'))
+
+        if fileDetails := source.get('fileDetails'):
+            self.file_details = FileDetails(
+                [FileDetails.VideoStream(
+                    v['widthPixels'], v['heightPixels'], v['frameRateFps'],
+                    v['aspectRatio'], v['codec'], v['bitrateBps'],
+                    v['rotation'], v['vendor']
+                    ) for v in fileDetails['videoStreams']],
+                [FileDetails.AudioStream(
+                    a['channelCount'], a['codec'], a['bitrateBps'], a['vendor']
+                    ) for a in fileDetails['audioStreams']],
+                fileDetails['fileName'],
+                fileDetails['fileSize'],
+                fileDetails['fileType'],
+                fileDetails['container'],
+                fileDetails['durationMs'],
+                fileDetails['bitrateBps'],
+                yt_date(fileDetails['creationTime']),
+            )
+
+        if processingDetails := source.get('processingDetails'):
+            self.processing_details = ProcessingDetails(
+                processingDetails.get('processingStatus'),
+                processingDetails.get('processingProgress', {}).get('partsTotal'),
+                processingDetails.get('processingProgress', {}).get('partsProcessed'),
+                processingDetails.get('processingProgress', {}).get('timeLeftMs'),
+                processingDetails.get('processingFailureReason'),
+            )
+
+            
+        if localizations := source.get('localizations'):
+            self.localizations = {
+                k: VideoLocalization(**v) for k, v in localizations
+            }
 
     def link(self, short: bool = False) -> str:
         if not short:
