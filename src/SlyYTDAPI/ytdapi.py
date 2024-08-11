@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TypeVar, Any
 from warnings import warn
 from SlyAPI import *
@@ -307,21 +307,20 @@ class YouTubeData(WebAPI):
         channel_id: str|None=None,
         after: datetime|None=None,
         before: datetime|None=None,
-        mine: bool|None=None,
+        mine: bool|None=None, # authorized user's channel (via OAuth2)
         order: Order=Order.RELEVANCE,
         safeSearch: SafeSearch=SafeSearch.MODERATE,
-        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=50) -> AsyncTrans[Video]:
         params = {
-            'part': parts,
+            'part': Part.SNIPPET,
             'safeSearch': safeSearch,
             'order': order,
             'type': 'video',
             'q': query,
             'channelId': channel_id,
             'forMine': mine,
-            'publishedAfter': after.isoformat("T") + "Z" if after else None,
-            'publishedBefore': before.isoformat("T") + "Z" if before else None,
+            'publishedAfter': after.astimezone(timezone.utc).isoformat("T")[:-6] + "Z" if after else None,
+            'publishedBefore': before.astimezone(timezone.utc).isoformat("T")[:-6] + "Z" if before else None,
             'maxResults': min(50, limit) if limit else None,
         }
 
