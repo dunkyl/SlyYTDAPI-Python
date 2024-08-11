@@ -151,6 +151,51 @@ class Video:
     
     # part: recordingDetails
     recording_date: datetime | None
+    
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Returns a dictionary representation of the Video object.
+        """
+        video_dict = {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'published_at': self.published_at.isoformat(),
+            'channel_id': self.channel_id,
+            'channel_name': self.channel_name,
+            'tags': self.tags,
+            'is_livestream': self.is_livestream,
+            'default_audio_language': self.default_audio_language,
+            'thumbnails': self.thumbnails,
+            'localized_title': self.localized_title,
+            'localized_description': self.localized_description,
+            'duration': self.duration,
+            'is_licensed': self.is_licensed,
+            'blocked_in': self.blocked_in,
+            'allowed_in': self.allowed_in,
+            'dimension': self.dimension,
+            'definition': self.definition,
+            'caption': self.caption,
+            'projection': self.projection,
+            'privacy': self.privacy,
+            'upload_status': self.upload_status,
+            'failure_reason': self.failure_reason,
+            'rejection_reason': self.rejection_reason,
+            'license': self.license,
+            'is_embeddable': self.is_embeddable,
+            'has_viewable_stats': self.has_viewable_stats,
+            'is_made_for_kids': self.is_made_for_kids,
+            'self_declared_made_for_kids': self.self_declared_made_for_kids,
+            'view_count': self.view_count,
+            'like_count': self.like_count,
+            'favourite_count': self.favourite_count,
+            'comment_count': self.comment_count,
+            'livestream_details': self.livestream_details,
+            'topic_categories': self.topic_categories,
+            'localizations': self.localizations,
+            'recording_date': self.recording_date.isoformat() if self.recording_date else None
+        }
+        return video_dict
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
