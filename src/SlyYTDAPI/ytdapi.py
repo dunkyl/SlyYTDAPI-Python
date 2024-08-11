@@ -544,6 +544,13 @@ class YouTubeData(WebAPI):
         order: Order=Order.RELEVANCE,
         safeSearch: SafeSearch=SafeSearch.MODERATE,
         limit: int|None=50) -> AsyncTrans[Video]:
+        '''Search for videos matching the search parameters.
+        Defaults to 50 most relevant results.
+        The `after` parameter is inclusive, so include a small offset for only
+        videos published strictly after.
+        The `mine` parameter can be used instead of `channel_id` if authorized
+        by the channel owner via OAuth2.
+        '''
         params = {
             'part': Part.SNIPPET,
             'safeSearch': safeSearch,
