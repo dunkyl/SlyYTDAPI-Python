@@ -29,6 +29,23 @@ class Part(Enum):
     # only if authorized by channel owner
     PROCESSING_DETAILS      = 'processingDetails'
 
+    @staticmethod
+    @property
+    def ALL_PUBLIC():
+        return {
+            Part.DETAILS,
+            Part.SNIPPET,
+            Part.STATUS,
+            Part.STATISTICS,
+            Part.REPLIES,
+            Part.LOCALIZATIONS,
+            Part.EMBED,
+            Part.LIVESTREAM_DETAILS,
+            Part.TOPIC_CATEGORIES,
+            Part.RECORDING_DETAILS,
+            Part.FILE_DETAILS,
+        }
+
 class PrivacyStatus(Enum):
     PRIVATE      = 'private'
     UNLISTED     = 'unlisted'
