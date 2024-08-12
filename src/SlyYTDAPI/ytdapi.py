@@ -390,7 +390,6 @@ class Video:
 
             
         if localizations := source.get('localizations'):
-            print(localizations)
             self.localizations = {
                 k: VideoLocalization(**v) for k, v in localizations.items()
             }
@@ -532,7 +531,6 @@ class YouTubeData(WebAPI):
             'part': parts,
             'id': ','.join(video_ids),
         }
-        print(params)
         return self.paginated(
             '/videos', params, None
             ).map(lambda r: Video(r, self))
