@@ -25,25 +25,23 @@ class Part(Enum):
     LIVESTREAM_DETAILS      = 'liveStreamingDetails'
     TOPIC_CATEGORIES        = 'topicDetails'
     RECORDING_DETAILS       = 'recordingDetails'
-    FILE_DETAILS            = 'fileDetails'
+    
     # only if authorized by channel owner
+    FILE_DETAILS            = 'fileDetails'
     PROCESSING_DETAILS      = 'processingDetails'
 
     @staticmethod
-    @property
     def ALL_PUBLIC():
         return {
             Part.DETAILS,
             Part.SNIPPET,
             Part.STATUS,
             Part.STATISTICS,
-            Part.REPLIES,
             Part.LOCALIZATIONS,
             Part.EMBED,
             Part.LIVESTREAM_DETAILS,
             Part.TOPIC_CATEGORIES,
             Part.RECORDING_DETAILS,
-            Part.FILE_DETAILS,
         }
 
 class PrivacyStatus(Enum):
@@ -146,7 +144,7 @@ class ContentDetails:
     dimension: str
     definition: str
     caption: str
-    projection: str
+    projection: str | None
 
 @dataclass
 class StatusDetails:
@@ -320,10 +318,11 @@ class Video:
                 contentDetails['licensedContent'],
                 contentDetails.get("regionRestriction", {}).get("blocked", []),
                 contentDetails.get("regionRestriction", {}).get("allowed", []),
+                contentDetails.get("contentRating", {}),
                 contentDetails["dimension"],
                 contentDetails["definition"],
                 contentDetails["caption"],
-                contentDetails["projection"],
+                contentDetails.get("projection")
             )
 
         if status := source.get('status'):
@@ -391,8 +390,9 @@ class Video:
 
             
         if localizations := source.get('localizations'):
+            print(localizations)
             self.localizations = {
-                k: VideoLocalization(**v) for k, v in localizations
+                k: VideoLocalization(**v) for k, v in localizations.items()
             }
 
     def link(self, short: bool = False) -> str:
@@ -532,6 +532,7 @@ class YouTubeData(WebAPI):
             'part': parts,
             'id': ','.join(video_ids),
         }
+        print(params)
         return self.paginated(
             '/videos', params, None
             ).map(lambda r: Video(r, self))
