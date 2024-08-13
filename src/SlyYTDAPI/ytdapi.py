@@ -233,7 +233,7 @@ class Video:
     channel_name: str
     tags: list[str]
     is_livestream: bool
-    default_audio_language: str | None
+    default_audio_language: str | None = None
     thumbnails: list[str] | None = None
     localized_title: str | None = None
     localized_description: str | None = None
@@ -254,7 +254,7 @@ class Video:
     comment_count: int | None = None
 
     # part: liveStreamingDetails
-    livestream_details: LivestreamDetails | None
+    livestream_details: LivestreamDetails | None = None
     
     # part: topicDetails
     topic_categories: list[str] | None = None
