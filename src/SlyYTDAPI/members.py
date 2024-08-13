@@ -84,13 +84,12 @@ class YouTubeData_WithMembers(YouTubeData):
     def get_my_members(self,
         level_id: str|None=None,
         member_channel_ids: list[str]|None=None,
-        parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncTrans[Membership]:
         if member_channel_ids is not None and len(member_channel_ids) > 100:
             raise ValueError('Cannot fetch more than 100 specific members.')
         mode = MembersMode.ALL_CURRENT
         params = {
-            'part': parts,
+            'part': Part.SNIPPET,
             'mode': mode,
             'hasAccessToLevel': level_id,
             'filterByMemberChannelId': ','.join(member_channel_ids or []),
@@ -109,7 +108,7 @@ class YouTubeData_WithMembers(YouTubeData):
         return cast(_MembersPollResponse, await self.get_json('/members', params))
     
     async def _memberships_levels(self, parts: Part|set[Part]) -> _MembersLevelsResponse:
-        params = { 'part': parts }
+        params = { 'part': parts.intersection({Part.ID, Part.SNIPPET}) }
         return cast(_MembersLevelsResponse, await self.get_json('/membershipsLevels', params))
 
     async def poll_new_members(self) -> list[Membership]:

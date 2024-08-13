@@ -44,6 +44,9 @@ class Part(Enum):
             Part.TOPIC_CATEGORIES,
             Part.RECORDING_DETAILS,
         }
+    
+    def intersection(self, other: 'set[Part]'):
+        return {self}
 
 class PrivacyStatus(Enum):
     PRIVATE      = 'private'
@@ -506,7 +509,17 @@ class YouTubeData(WebAPI):
         if mine==bool(channel_ids):
             raise ValueError("Must specify exactly one of channel id or mine in channel list query")
         maxResults = min(50, limit) if limit else None # per-page limit
-        params: ParamsDict = { 'part': parts, 'maxResults': maxResults }
+        allowed = {
+            # TODO: auditDetails, brandingSettings, contentOwnerDetails
+            Part.DETAILS,
+            Part.ID,
+            Part.LOCALIZATIONS,
+            Part.SNIPPET,
+            Part.STATISTICS,
+            Part.STATUS,
+            Part.TOPIC_CATEGORIES
+        }
+        params: ParamsDict = { 'part': parts.intersection(allowed), 'maxResults': maxResults }
         if channel_ids:
             channel_ids = list(set(channel_ids or [])) # deduplicate IDs
             channels_chunks50 = [
@@ -527,7 +540,7 @@ class YouTubeData(WebAPI):
         video_ids: list[str],
         parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> AsyncLazy[Video]:
         params: ParamsDict = {
-            'part': parts,
+            'part': parts.intersection(Part.ALL_PUBLIC()),
             'id': ','.join(video_ids),
         }
         return self.paginated(
@@ -542,7 +555,8 @@ class YouTubeData(WebAPI):
         parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncLazy[Video]:
         params: ParamsDict = {
-            'part': parts,
+            'part': parts.intersection(
+                {Part.ID, Part.DETAILS, Part.SNIPPET, Part.STATUS}),
             'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
         }
@@ -590,7 +604,7 @@ class YouTubeData(WebAPI):
         order: CommentOrder=CommentOrder.TIME,
         limit: int|None=None) -> AsyncLazy[Comment]:
         params: ParamsDict = {
-            'part': parts,
+            'part': parts.intersection({Part.ID, Part.REPLIES, Part.SNIPPET}),
             'commentOrder': order,
             'searchTerms': query,
             'videoId': video_id,
