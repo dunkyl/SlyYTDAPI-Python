@@ -165,7 +165,7 @@ class StatusDetails:
 @dataclass
 class VideoPublicStatistics:
     view_count: int
-    like_count: int
+    like_count: int | None
     comment_count: int
 
 @dataclass
@@ -344,7 +344,8 @@ class Video:
 
         if statistics := source.get('statistics'):
             self.view_count = int(statistics.get('viewCount'))
-            self.like_count = int(statistics.get('likeCount'))
+            if statistics.get('likeCount'):
+                self.like_count = int(statistics.get('likeCount'))
             self.comment_count = int(statistics.get('commentCount'))
 
         if stream := source.get('liveStreamingDetails'):
