@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import TypeVar, Any
 from warnings import warn
 from SlyAPI import *
+from SlyAPI.web import ParamsDict
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -327,7 +328,7 @@ class Video:
         if status := source.get('status'):
             self.privacy = status.get('privacyStatus')
             self.status_details = StatusDetails(
-                self.privacy,
+                status.get('privacyStatus'),
                 status.get('uploadStatus'),
                 status.get('failureReason'),
                 status.get('rejectionReason'),
@@ -399,7 +400,7 @@ class Video:
         else:
             return F"https://youtu.be/{self.id}"
 
-    def comments(self, limit: int | None = 100) -> AsyncTrans[Comment]:
+    def comments(self, limit: int | None = 100) -> AsyncLazy[Comment]:
         return self._youtube.comments(self.id, limit=limit)
 
     async def channel(self) -> 'Channel':
@@ -475,7 +476,7 @@ class Channel:
         new = await self._youtube.channel(self.id)
         self.__dict__.update(new.__dict__)
 
-    def videos(self, limit: int|None=None, mine: bool|None=None) -> AsyncTrans[Video]:
+    def videos(self, limit: int|None=None, mine: bool|None=None) -> AsyncLazy[Video]:
         return self._youtube.search_videos(channel_id=self.id, limit=limit, mine=mine)
 
 class YouTubeData(WebAPI):
@@ -502,11 +503,11 @@ class YouTubeData(WebAPI):
         channel_ids: list[str]|None=None,
         mine: bool=False,
         parts: Part|set[Part]=Part.SNIPPET,
-        limit: int|None=None) -> AsyncTrans[Channel]:
+        limit: int|None=None) -> AsyncLazy[Channel]:
         if mine==bool(channel_ids):
             raise ValueError("Must specify exactly one of channel id or mine in channel list query")
         maxResults = min(50, limit) if limit else None # per-page limit
-        params = { 'part': parts, 'maxResults': maxResults }
+        params: ParamsDict = { 'part': parts, 'maxResults': maxResults }
         if channel_ids:
             channel_ids = list(set(channel_ids or [])) # deduplicate IDs
             channels_chunks50 = [
@@ -525,12 +526,11 @@ class YouTubeData(WebAPI):
 
     def videos(self,
         video_ids: list[str],
-        parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> AsyncTrans[Video]:
-        params = {
+        parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> AsyncLazy[Video]:
+        params: ParamsDict = {
             'part': parts,
             'id': ','.join(video_ids),
         }
-        print(params)
         return self.paginated(
             '/videos', params, None
             ).map(lambda r: Video(r, self))
@@ -541,8 +541,8 @@ class YouTubeData(WebAPI):
     def get_playlist_videos(self,
         playlist_id: str, 
         parts: Part|set[Part]=Part.SNIPPET,
-        limit: int|None=None) -> AsyncTrans[Video]:
-        params = {
+        limit: int|None=None) -> AsyncLazy[Video]:
+        params: ParamsDict = {
             'part': parts,
             'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
@@ -559,7 +559,7 @@ class YouTubeData(WebAPI):
         mine: bool|None=None, # authorized user's channel (via OAuth2)
         order: Order=Order.RELEVANCE,
         safeSearch: SafeSearch=SafeSearch.MODERATE,
-        limit: int|None=50) -> AsyncTrans[Video]:
+        limit: int|None=50) -> AsyncLazy[Video]:
         '''Search for videos matching the search parameters.
         Defaults to 50 most relevant results.
         The `after` parameter is inclusive, so include a small offset for only
@@ -567,7 +567,7 @@ class YouTubeData(WebAPI):
         The `mine` parameter can be used instead of `channel_id` if authorized
         by the channel owner via OAuth2.
         '''
-        params = {
+        params: ParamsDict = {
             'part': Part.SNIPPET,
             'safeSearch': safeSearch,
             'order': order,
@@ -590,7 +590,7 @@ class YouTubeData(WebAPI):
         parts: Part|set[Part]={Part.SNIPPET,Part.REPLIES},
         order: CommentOrder=CommentOrder.TIME,
         limit: int|None=None) -> AsyncLazy[Comment]:
-        params = {
+        params: ParamsDict = {
             'part': parts,
             'commentOrder': order,
             'searchTerms': query,
