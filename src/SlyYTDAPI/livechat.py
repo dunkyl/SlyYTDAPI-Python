@@ -5,7 +5,7 @@ https://developers.google.com/youtube/v3/live/docs
 from datetime import datetime
 from .ytdapi import YouTubeData, Part, yt_date
 
-class _LiveChatEvent: pass
+# class _LiveChatEvent: pass
 
 class ChatEnd: pass
 

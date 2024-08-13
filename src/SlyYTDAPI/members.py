@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, TypedDict, cast
 from SlyAPI.oauth2 import OAuth2
 from SlyAPI import *
-from SlyAPI.web import JsonMap
+from SlyAPI.web import JsonMap, ParamsDict
 from .ytdapi import YouTubeData, Part, yt_date
 
 class _MembersPollResponse(TypedDict):
@@ -88,7 +88,7 @@ class YouTubeData_WithMembers(YouTubeData):
         if member_channel_ids is not None and len(member_channel_ids) > 100:
             raise ValueError('Cannot fetch more than 100 specific members.')
         mode = MembersMode.ALL_CURRENT
-        params = {
+        params: ParamsDict = {
             'part': Part.SNIPPET,
             'mode': mode,
             'hasAccessToLevel': level_id,
@@ -100,7 +100,7 @@ class YouTubeData_WithMembers(YouTubeData):
             ).map(Membership)
     
     async def _members_poll(self, pageToken: str|None) -> _MembersPollResponse:
-        params = {
+        params: ParamsDict = {
             'part': Part.SNIPPET,
             'membersMode': MembersMode.UPDATES,
             'pageToken': pageToken
