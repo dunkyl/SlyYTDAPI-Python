@@ -72,7 +72,7 @@ class CommentOrder(Enum):
     RELEVANCE    = 'relevance'
     TIME         = 'time'
 
-ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(?:(\d{1,2})S)?')
+ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?(?:T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(?:(\d{1,2})S)?)?')
 
 def yt_date(date: str) -> datetime:
     if date.endswith('Z'):
