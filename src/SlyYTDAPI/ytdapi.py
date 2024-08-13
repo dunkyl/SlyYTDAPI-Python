@@ -556,7 +556,7 @@ class YouTubeData(WebAPI):
         limit: int|None=None) -> AsyncLazy[Video]:
         params: ParamsDict = {
             'part': parts.intersection(
-                {Part.ID, Part.DETAILS, Part.SNIPPET, Part.STATUS}),
+                {Part.ID, Part.SNIPPET, Part.STATUS}),
             'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
         }
