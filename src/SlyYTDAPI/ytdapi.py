@@ -389,7 +389,6 @@ class Video:
             )
             
         if localizations := source.get('localizations'):
-            # print(localizations)
             self.localizations = {
                 k: VideoLocalization(**v) for k, v in localizations.items()
             }
