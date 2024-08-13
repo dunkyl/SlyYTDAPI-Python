@@ -293,21 +293,21 @@ class Video:
                 raise ValueError("Video expects source id to be a string or dict")
         
         if snippet := source.get('snippet'):
-            self.title = snippet['title']
-            self.description = snippet['description']
-            self.published_at = yt_date(snippet['publishedAt'])
-            self.channel_id = snippet['channelId']
-            self.channel_name = snippet['channelTitle']
+            self.title = snippet.get('title')
+            self.description = snippet.get('description')
+            self.published_at = yt_date(snippet.get('publishedAt'))
+            self.channel_id = snippet.get('channelId')
+            self.channel_name = snippet.get('channelTitle')
             self.tags = snippet.get('tags', [])
             self.is_livestream = snippet.get('liveBroadcastContent') == 'live'
             self.default_audio_language = snippet.get('defaultAudioLanguage')
 
             self.thumbnails = [x.get("url") for x in snippet.get("thumbnails", {}).values()]
             self.localized_title = snippet.get("localized", {}).get("title")
-            self.localized_description = snippet.get("localized", {}).get("description")    
+            self.localized_description = snippet.get("localized", {}).get("description")
 
         if contentDetails := source.get('contentDetails'):
-            m = ISO8601_PERIOD.match(contentDetails['duration'])
+            m = ISO8601_PERIOD.match(contentDetails.get('duration'))
             if m:
                 days, hours, minutes, seconds = (int(g) if g else 0 for g in m.groups())
                 self.duration = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
@@ -315,43 +315,43 @@ class Video:
                 raise ValueError(F"Unknown duration format: {contentDetails['duration']}")
             self.content_details = ContentDetails(
                 self.duration,
-                contentDetails['licensedContent'],
+                contentDetails.get('licensedContent'),
                 contentDetails.get("regionRestriction", {}).get("blocked", []),
                 contentDetails.get("regionRestriction", {}).get("allowed", []),
                 contentDetails.get("contentRating", {}),
-                contentDetails["dimension"],
-                contentDetails["definition"],
-                contentDetails["caption"],
+                contentDetails.get("dimension"),
+                contentDetails.get("definition"),
+                contentDetails.get("caption"),
                 contentDetails.get("projection")
             )
 
         if status := source.get('status'):
-            self.privacy = status['privacyStatus']
+            self.privacy = status.get('privacyStatus')
             self.status_details = StatusDetails(
                 self.privacy,
-                status['uploadStatus'],
+                status.get('uploadStatus'),
                 status.get('failureReason'),
                 status.get('rejectionReason'),
-                status['license'],
-                status['embeddable'],
-                status['publicStatsViewable'],
-                status['madeForKids'],
+                status.get('license'),
+                status.get('embeddable'),
+                status.get('publicStatsViewable'),
+                status.get('madeForKids'),
                 status.get('selfDeclaredMadeForKids')
             )
 
         if statistics := source.get('statistics'):
-            self.view_count = int(statistics['viewCount'])
-            self.like_count = int(statistics['likeCount'])
-            self.comment_count = int(statistics['commentCount'])
+            self.view_count = int(statistics.get('viewCount'))
+            self.like_count = int(statistics.get('likeCount'))
+            self.comment_count = int(statistics.get('commentCount'))
 
         if stream := source.get('liveStreamingDetails'):
             self.livestream_details = LivestreamDetails(
                 stream.get('concurrentViewers'),
                 yt_date_or_none(stream.get('actualStartTime')),
                 yt_date_or_none(stream.get('actualEndTime')),
-                yt_date(stream['scheduledStartTime']),
+                yt_date(stream.get('scheduledStartTime')),
                 yt_date_or_none(stream.get('scheduledEndTime')),
-                stream['activeLiveChatId']
+                stream.get('activeLiveChatId')
             )
 
         if topic_details := source.get('topicDetails'):
@@ -363,20 +363,20 @@ class Video:
         if fileDetails := source.get('fileDetails'):
             self.file_details = FileDetails(
                 [FileDetails.VideoStream(
-                    v['widthPixels'], v['heightPixels'], v['frameRateFps'],
-                    v['aspectRatio'], v['codec'], v['bitrateBps'],
-                    v['rotation'], v['vendor']
-                    ) for v in fileDetails['videoStreams']],
+                    v.get('widthPixels'), v.get('heightPixels'), v.get('frameRateFps'),
+                    v.get('aspectRatio'), v.get('codec'), v.get('bitrateBps'),
+                    v.get('rotation'), v.get('vendor')
+                    ) for v in fileDetails.get('videoStreams')],
                 [FileDetails.AudioStream(
-                    a['channelCount'], a['codec'], a['bitrateBps'], a['vendor']
-                    ) for a in fileDetails['audioStreams']],
-                fileDetails['fileName'],
-                fileDetails['fileSize'],
-                fileDetails['fileType'],
-                fileDetails['container'],
-                fileDetails['durationMs'],
-                fileDetails['bitrateBps'],
-                yt_date(fileDetails['creationTime']),
+                    a.get('channelCount'), a.get('codec'), a.get('bitrateBps'), a.get('vendor')
+                    ) for a in fileDetails.get('audioStreams')],
+                fileDetails.get('fileName'),
+                fileDetails.get('fileSize'),
+                fileDetails.get('fileType'),
+                fileDetails.get('container'),
+                fileDetails.get('durationMs'),
+                fileDetails.get('bitrateBps'),
+                yt_date(fileDetails.get('creationTime')),
             )
 
         if processingDetails := source.get('processingDetails'):
@@ -387,10 +387,9 @@ class Video:
                 processingDetails.get('processingProgress', {}).get('timeLeftMs'),
                 processingDetails.get('processingFailureReason'),
             )
-
             
         if localizations := source.get('localizations'):
-            print(localizations)
+            # print(localizations)
             self.localizations = {
                 k: VideoLocalization(**v) for k, v in localizations.items()
             }
