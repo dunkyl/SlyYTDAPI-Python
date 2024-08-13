@@ -71,12 +71,11 @@ class CommentOrder(Enum):
     RELEVANCE    = 'relevance'
     TIME         = 'time'
 
-ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(\d{1,2})S')
+ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(?:(\d{1,2})S)?')
 
 def yt_date(date: str) -> datetime:
     if date.endswith('Z'):
         try:
-            datetime.fromisoformat
             return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
         except ValueError:
             return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
@@ -590,7 +589,7 @@ class YouTubeData(WebAPI):
         query: str|None=None,
         parts: Part|set[Part]={Part.SNIPPET,Part.REPLIES},
         order: CommentOrder=CommentOrder.TIME,
-        limit: int|None=None) -> AsyncTrans[Comment]:
+        limit: int|None=None) -> AsyncLazy[Comment]:
         params = {
             'part': parts,
             'commentOrder': order,
