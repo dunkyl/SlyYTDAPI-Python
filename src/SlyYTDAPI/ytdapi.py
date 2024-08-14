@@ -308,8 +308,11 @@ class Video:
             self.thumbnails = [x.get("url") for x in snippet.get("thumbnails", {}).values()]
             self.localized_title = snippet.get("localized", {}).get("title")
             self.localized_description = snippet.get("localized", {}).get("description")
-
-        if contentDetails := source.get('contentDetails'):
+            
+        if source.get('kind') == 'youtube#playlistItem':
+            self.id = source.get('contentDetails', {}).get('videoId')
+        elif contentDetails := source.get('contentDetails'):
+            
             m = ISO8601_PERIOD.match(contentDetails.get('duration'))
             if m:
                 days, hours, minutes, seconds = (int(g) if g else 0 for g in m.groups())
@@ -553,11 +556,11 @@ class YouTubeData(WebAPI):
 
     def get_playlist_videos(self,
         playlist_id: str, 
-        parts: Part|set[Part]=Part.SNIPPET,
+        parts: Part|set[Part]={Part.SNIPPET, Part.DETAILS},
         limit: int|None=None) -> AsyncLazy[Video]:
         params: ParamsDict = {
             'part': parts.intersection(
-                {Part.ID, Part.SNIPPET, Part.STATUS}),
+                {Part.ID, Part.SNIPPET, Part.STATUS, Part.DETAILS}),
             'playlistId': playlist_id,
             'maxResults': min(50, limit) if limit else None,
         }
