@@ -1,6 +1,6 @@
 [project]
 name = "SlyYTDAPI"
-version = "0.4.6"
+version = "0.4.7"
 description = "No-boilerplate, async and typed YouTube Data API access."
 readme = "README.md"
 requires-python = ">=3.10"
