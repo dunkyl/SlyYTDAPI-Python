@@ -6,7 +6,9 @@
 
 > 🐍 For Python 3.10+
 
-No-boilerplate, async and typed YouTube Data API access. 😋
+<p style="text-align: center;">
+  No-boilerplate, async, typed access to YouTube Data API 😋
+</p>
 
 ```shell
 pip install slyytdapi
@@ -16,7 +18,7 @@ This library does not have full coverage.
 All methods are read-only.
 Currently, the following topics are supported:
 
-* Videos
+* Videos & Playlists
 * Channels
 * Comment threads
 * Video search
@@ -55,7 +57,9 @@ asyncio.run(main())
 
 ---
 
-Example CLI usage for getting authorized:
+Access to YouTube Data API is free is limited by a quota. See YouTube's [determine quota cost](https://developers.google.com/youtube/v3/determine_quota_cost) article for more information.
+
+If you are using OAuth2 instead of an API Key, a CLI is provided to grant credentials to yourself:
 
 ```sh
 # WINDOWS
@@ -64,5 +68,5 @@ py -m SlyYTDAPI grant
 python3 -m SlyYTDAPI grant
 ```
 
-Granting credentials requires a Google Cloud Console account and JSON file.
+Both methods require a Google Cloud Console account and project credentials.
 Please see https://docs.dunkyl.net/SlyAPI-Python/tutorial/oauth2.html for more information.
