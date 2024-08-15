@@ -253,11 +253,11 @@ class Video:
     status_details: StatusDetails | None = None
 
     # part: statistics
-    view_count: int | None = None
-    like_count: int | None = None
+    view_count: int | None = 0
+    like_count: int | None = 0
 
     # dislike_count: int ## rest in peace
-    comment_count: int | None = None
+    comment_count: int | None = 0
 
     # part: liveStreamingDetails
     livestream_details: LivestreamDetails | None = None
@@ -350,13 +350,12 @@ class Video:
             )
 
         if statistics := source.get('statistics'):
-            self.view_count = int(statistics.get('viewCount'))
-            if statistics.get('likeCount'):
-                self.like_count = int(statistics.get('likeCount'))
-            self.comment_count = int(statistics.get('commentCount'))
+            self.view_count = int(statistics.get('viewCount', 0))
+            self.like_count = int(statistics.get('likeCount', 0))
+            self.comment_count = int(statistics.get('commentCount', 0))
 
         if stream := source.get('liveStreamingDetails'):
-            self.livestream_details = LivestreamDetails(
+            self.livestream_details = LivestreamDetails(s
                 stream.get('concurrentViewers'),
                 yt_date_or_none(stream.get('actualStartTime')),
                 yt_date_or_none(stream.get('actualEndTime')),
