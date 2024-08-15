@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import inspect
 import re
 from enum import Enum
@@ -7,6 +7,7 @@ from typing import TypeVar, Any
 from warnings import warn
 from SlyAPI import *
 from SlyAPI.web import ParamsDict
+from SlyAPI.webapi import is_dataclass_instance
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -278,8 +279,11 @@ class Video:
         """
         Returns a dictionary representation of the Video object.
         """
+        # TODO: Revisit with SlySerialize if TypeForm is introduced
+        # https://discuss.python.org/t/typeform-spelling-for-a-type-annotation-object-at-runtime/51435
         return {
-            name: member for name, member in inspect.getmembers(self)
+            name: asdict(member) if is_dataclass_instance(member) else member
+            for name, member in inspect.getmembers(self)
             if not name.startswith('_')
                 and not inspect.isfunction(member)
                 and not inspect.ismethod(member)
