@@ -543,13 +543,22 @@ class YouTubeData(WebAPI):
     def videos(self,
         video_ids: list[str],
         parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> AsyncLazy[Video]:
-        params: ParamsDict = {
-            'part': parts.intersection(Part.ALL_PUBLIC()),
-            'id': ','.join(video_ids),
-        }
-        return self.paginated(
-            '/videos', params, None
-            ).map(lambda r: Video(r, self))
+        parts = parts.intersection(Part.ALL_PUBLIC())
+        async def x():
+            current = 0
+            while current < len(video_ids):
+                params: ParamsDict = {
+                    'part': parts,
+                    'id': ','.join(video_ids[current:current+50]),
+                    'maxResults': 50
+                }
+                async for v in self.paginated(
+                    '/videos', params, None
+                    ).map(lambda r: Video(r, self)):
+                    print(v.title)
+                    yield v
+                current += 50
+        return AsyncLazy(x())
 
     async def video(self, id: str, parts: Part|set[Part]={Part.ID,Part.SNIPPET}) -> Video:
         return (await self.videos([id], parts))[0]
