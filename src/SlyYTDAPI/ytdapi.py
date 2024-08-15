@@ -78,6 +78,9 @@ class CommentOrder(Enum):
 ISO8601_PERIOD = re.compile(r'P(?:(\d+)D)?(?:T(?:(\d{1,2})H)?(?:(\d{1,2})M)?(?:(\d{1,2})S)?)?')
 
 def yt_date(date: str) -> datetime:
+    if not date:
+        return
+
     if date.endswith('Z'):
         try:
             return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
