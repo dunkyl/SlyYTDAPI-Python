@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict, is_dataclass
 import inspect
 import re
 from enum import Enum
@@ -279,7 +279,8 @@ class Video:
         Returns a dictionary representation of the Video object.
         """
         return {
-            name: member for name, member in inspect.getmembers(self)
+            name: asdict(member) if is_dataclass(member) else member
+            for name, member in inspect.getmembers(self)
             if not name.startswith('_')
                 and not inspect.isfunction(member)
                 and not inspect.ismethod(member)
