@@ -281,13 +281,18 @@ class Video:
         """
         # TODO: Revisit with SlySerialize if TypeForm is introduced
         # https://discuss.python.org/t/typeform-spelling-for-a-type-annotation-object-at-runtime/51435
-        return {
+        json = {
             name: asdict(member) if is_dataclass_instance(member) else member
             for name, member in inspect.getmembers(self)
             if not name.startswith('_')
                 and not inspect.isfunction(member)
                 and not inspect.ismethod(member)
         }
+        if 'localizations' in json:
+            json['localizations'] = {
+                k: asdict(v) for k, v in json['localizations'].items()
+            }
+        return json
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
@@ -508,14 +513,21 @@ class YouTubeData(WebAPI):
 
     async def channel(self, channel_id: str, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(channel_ids=[channel_id], parts=parts))[0]
+    
+    async def channel_by_handle(self, handle: str, parts: Part=Part.SNIPPET) -> Channel:
+        return (await self._channels_list(handle=handle, parts=parts))[0]
+    
+    async def channels_by_username(self, username: str, parts: Part=Part.SNIPPET) -> AsyncLazy[Channel]:
+        return (await self._channels_list(username=username, parts=parts))
 
     def _channels_list(self,
         channel_ids: list[str]|None=None,
+        handle: str|None=None,
+        username: str|None=None,
         mine: bool=False,
+        my_managed: bool=False,
         parts: Part|set[Part]=Part.SNIPPET,
         limit: int|None=None) -> AsyncLazy[Channel]:
-        if mine==bool(channel_ids):
-            raise ValueError("Must specify exactly one of channel id or mine in channel list query")
         maxResults = min(50, limit) if limit else None # per-page limit
         allowed = {
             # TODO: auditDetails, brandingSettings, contentOwnerDetails
@@ -539,9 +551,17 @@ class YouTubeData(WebAPI):
                     async for c in self.paginated('/channels', p, limit):
                         yield c
             return AsyncLazy(page_chunks()).map(lambda r: Channel(r, self))
-        else: # mine
+        else:
+            if mine:
+                filter = { 'mine': True }
+            elif my_managed:
+                filter = {'managedByMe': True}
+            elif username or handle:
+                filter = { 'forHandle': handle, 'forUsername': username }
+            else:
+                raise ValueError("One of `mine`, `my_managed`, `handle`, or `username` must be specified")
             return self.paginated(
-                '/channels', params | { 'mine': True }, limit
+                '/channels', params | filter, limit
                 ).map(lambda r: Channel(r, self))
 
     def videos(self,
