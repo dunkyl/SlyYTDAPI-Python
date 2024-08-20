@@ -11,6 +11,8 @@ from SlyAPI.webapi import is_dataclass_instance
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
+RE_CHANNEL_URL = re.compile(r'^(?:https?:)?\/\/?(?:www\.|m\.)(?:youtube\.com)\/(?:c\/(?P<username>[a-zA-Z0-9\-_]+)|@(?P<handle>[a-zA-Z0-9\-_]+)|channel\/(?P<id>UC[a-zA-Z0-9\-_]+))')
+
 class Scope:
     READONLY     = F"{SCOPES_ROOT}.readonly"
     MEMBERS      = F"{SCOPES_ROOT}.channel-memberships.creator"
@@ -517,8 +519,19 @@ class YouTubeData(WebAPI):
     async def channel_by_handle(self, handle: str, parts: Part=Part.SNIPPET) -> Channel:
         return (await self._channels_list(handle=handle, parts=parts))[0]
     
-    async def channels_by_username(self, username: str, parts: Part=Part.SNIPPET) -> AsyncLazy[Channel]:
-        return (await self._channels_list(username=username, parts=parts))
+    async def channel_by_username(self, username: str, parts: Part=Part.SNIPPET) -> Channel:
+        return (await self._channels_list(username=username, parts=parts))[0]
+    
+    async def channel_by_url(self, url: str, parts: Part=Part.SNIPPET) -> Channel:
+        m = RE_CHANNEL_URL.match(url)
+        if not m:
+            raise ValueError(F"unrecognized channel URL format: {url}")
+        if username := m.group('username'):
+            return await self.channel_by_username(username, parts)
+        elif handle := m.group('handle'):
+            return await self.channel_by_handle(handle, parts)
+        elif id := m.group('id'):
+            return await self.channel(id, parts)
 
     def _channels_list(self,
         channel_ids: list[str]|None=None,
