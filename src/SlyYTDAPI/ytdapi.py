@@ -169,7 +169,7 @@ class StatusDetails:
 class VideoPublicStatistics:
     view_count: int
     like_count: int | None
-    comment_count: int
+    comment_count: int | None
 
 @dataclass
 class FileDetails:
@@ -199,7 +199,7 @@ class FileDetails:
     container: str
     duration_milliseconds: int
     bitrate: int
-    created_at: datetime
+    created_at: datetime | None
 
 
 @dataclass
@@ -358,9 +358,10 @@ class Video:
 
         if statistics := source.get('statistics'):
             self.view_count = int(statistics.get('viewCount'))
-            if statistics.get('likeCount'):
+            if statistics.get('likeCount'): # may be hidden
                 self.like_count = int(statistics.get('likeCount'))
-            self.comment_count = int(statistics.get('commentCount'))
+            if statistics.get('commentCount'): # may be disabled
+                self.comment_count = int(statistics.get('commentCount'))
 
         if stream := source.get('liveStreamingDetails'):
             self.livestream_details = LivestreamDetails(
@@ -376,7 +377,7 @@ class Video:
             self.topic_categories = topic_details.get('topicCategories', None)
 
         if recording_details := source.get('recordingDetails'):
-            self.recorded_at = yt_date(recording_details.get('recordingDate'))
+            self.recorded_at = yt_date_or_none(recording_details.get('recordingDate'))
 
         if fileDetails := source.get('fileDetails'):
             self.file_details = FileDetails(
@@ -394,7 +395,7 @@ class Video:
                 fileDetails.get('container'),
                 fileDetails.get('durationMs'),
                 fileDetails.get('bitrateBps'),
-                yt_date(fileDetails.get('creationTime')),
+                yt_date_or_none(fileDetails.get('creationTime')),
             )
 
         if processingDetails := source.get('processingDetails'):
@@ -592,7 +593,6 @@ class YouTubeData(WebAPI):
                 async for v in self.paginated(
                     '/videos', params, None
                     ).map(lambda r: Video(r, self)):
-                    print(v.title)
                     yield v
                 current += 50
         return AsyncLazy(x())
