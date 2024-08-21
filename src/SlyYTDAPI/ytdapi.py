@@ -210,7 +210,7 @@ class LivestreamDetails:
     # only available after stream ends
     ended_at: datetime | None
 
-    scheduled_start: datetime
+    scheduled_start: datetime | None
     scheduled_end: datetime | None
     chat_id: str
     
@@ -368,7 +368,7 @@ class Video:
                 stream.get('concurrentViewers'),
                 yt_date_or_none(stream.get('actualStartTime')),
                 yt_date_or_none(stream.get('actualEndTime')),
-                yt_date(stream.get('scheduledStartTime')),
+                yt_date_or_none(stream.get('scheduledStartTime')),
                 yt_date_or_none(stream.get('scheduledEndTime')),
                 stream.get('activeLiveChatId')
             )
