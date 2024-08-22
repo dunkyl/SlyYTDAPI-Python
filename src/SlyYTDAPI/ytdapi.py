@@ -290,7 +290,7 @@ class Video:
                 and not inspect.isfunction(member)
                 and not inspect.ismethod(member)
         }
-        if 'localizations' in json:
+        if json.get('localizations'):
             json['localizations'] = {
                 k: asdict(v) for k, v in json['localizations'].items()
             }
