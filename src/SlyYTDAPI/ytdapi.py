@@ -142,7 +142,7 @@ class EmbedInfo:
 
 @dataclass
 class ContentDetails:
-    duration: int
+    duration: int | None
     is_licensed: bool
     blocked_in: list[str]
     allowed_in: list[str]
@@ -323,15 +323,17 @@ class Video:
         if source.get('kind') == 'youtube#playlistItem':
             self.id = source.get('contentDetails', {}).get('videoId')
         elif contentDetails := source.get('contentDetails'):
-            
-            m = ISO8601_PERIOD.match(contentDetails.get('duration'))
-            if m:
-                days, hours, minutes, seconds = (int(g) if g else 0 for g in m.groups())
-                self.duration = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
-            else:
-                raise ValueError(F"Unknown duration format: {contentDetails['duration']}")
+            duration = None
+            if contentDetails.get('duration'):
+                m = ISO8601_PERIOD.match(contentDetails['duration'])
+                if m:
+                    days, hours, minutes, seconds = (int(g) if g else 0 for g in m.groups())
+                    duration = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
+                else:
+                    raise ValueError(F"Unknown duration format: {contentDetails['duration']}")
+            self.duration = duration
             self.content_details = ContentDetails(
-                self.duration,
+                duration,
                 contentDetails.get('licensedContent'),
                 contentDetails.get("regionRestriction", {}).get("blocked", []),
                 contentDetails.get("regionRestriction", {}).get("allowed", []),
