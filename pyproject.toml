@@ -1,12 +1,12 @@
 [project]
 name = "SlyYTDAPI"
-version = "0.4.11"
+version = "0.4.12"
 description = "No-boilerplate, async and typed YouTube Data API access."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file="LICENSE" }
 authors = [{name="Dunkyl 🔣🔣"}]
-dependencies = [ 'SlyAPI >= 0.5.0' ]
+dependencies = [ 'SlyAPI >= 0.5.0', 'SlySerialize' ]
 
 [project.optional-dependencies]
 dev = [

@@ -8,6 +8,7 @@ from warnings import warn
 from SlyAPI import *
 from SlyAPI.web import ParamsDict
 from SlyAPI.webapi import is_dataclass_instance
+from SlySerialize import to_json
 
 SCOPES_ROOT = 'https://www.googleapis.com/auth/youtube'
 
@@ -277,24 +278,18 @@ class Video:
     # part: processingDetails
     processing_details: ProcessingDetails | None = None
     
+    # TODO: rename to_json()
     def to_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary representation of the Video object.
         """
-        # TODO: Revisit with SlySerialize if TypeForm is introduced
-        # https://discuss.python.org/t/typeform-spelling-for-a-type-annotation-object-at-runtime/51435
-        json = {
-            name: asdict(member) if is_dataclass_instance(member) else member
-            for name, member in inspect.getmembers(self)
+        public_obj = {
+            name: member for name, member in inspect.getmembers(self)
             if not name.startswith('_')
                 and not inspect.isfunction(member)
                 and not inspect.ismethod(member)
         }
-        if json.get('localizations'):
-            json['localizations'] = {
-                k: asdict(v) for k, v in json['localizations'].items()
-            }
-        return json
+        return to_json(public_obj)
 
     def __init__(self, source: dict[str, Any], yt: 'YouTubeData'):
         self._youtube = yt
